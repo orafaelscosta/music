@@ -40,6 +40,30 @@ export interface ProjectListResponse {
   total: number;
 }
 
+export interface MelodyNote {
+  start_time: number;
+  end_time: number;
+  duration: number;
+  midi_note: number;
+  note_name: string;
+  velocity: number;
+  lyric: string;
+}
+
+export interface MelodyData {
+  notes: MelodyNote[];
+  bpm: number;
+  time_signature: number[];
+  total_notes: number;
+}
+
+export interface SyllabifyResponse {
+  syllables: string[];
+  lines: string[][];
+  total: number;
+  assigned_to_melody: boolean;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -158,6 +182,63 @@ class ApiClient {
 
   async listEngines(): Promise<Record<string, unknown>> {
     return this.request("/api/voices/engines");
+  }
+
+  // Melody
+  async extractMelody(projectId: string): Promise<MelodyData> {
+    return this.request(`/api/melody/${projectId}/extract`, {
+      method: "POST",
+    });
+  }
+
+  async importMidi(projectId: string, file: File): Promise<MelodyData> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const url = `${this.baseUrl}/api/melody/${projectId}/import`;
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        detail: "Erro na importação MIDI",
+      }));
+      throw new Error(error.detail);
+    }
+
+    return response.json();
+  }
+
+  async getMelody(projectId: string): Promise<MelodyData> {
+    return this.request(`/api/melody/${projectId}`);
+  }
+
+  async updateMelody(
+    projectId: string,
+    data: MelodyData
+  ): Promise<MelodyData> {
+    return this.request(`/api/melody/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async snapMelodyToGrid(
+    projectId: string,
+    gridResolution: number = 0.125
+  ): Promise<MelodyData> {
+    return this.request(
+      `/api/melody/${projectId}/snap-to-grid?grid_resolution=${gridResolution}`,
+      { method: "POST" }
+    );
+  }
+
+  async syllabifyLyrics(projectId: string): Promise<SyllabifyResponse> {
+    return this.request(`/api/melody/${projectId}/syllabify`, {
+      method: "POST",
+    });
   }
 
   // Audio download URL

@@ -106,9 +106,35 @@ class PipelineOrchestrator:
         project.status = ProjectStatus.MELODY_READY
 
     async def _run_melody(self, project: Project, db: AsyncSession) -> None:
-        """Gera melodia MIDI — placeholder para Fase 2."""
-        logger.info("melody_placeholder", project_id=project.id)
-        # Será implementado na Fase 2 com Basic Pitch
+        """Extrai melodia MIDI do instrumental."""
+        from config import settings
+        from services.melody import MelodyService
+
+        melody_svc = MelodyService()
+        audio_path = (
+            settings.projects_path
+            / project.id
+            / f"instrumental.{project.audio_format}"
+        )
+        bpm = project.bpm or 120.0
+        melody = await melody_svc.extract_melody_from_audio(audio_path, bpm)
+
+        project_dir = settings.projects_path / project.id
+        melody_svc.save_melody_json(melody, project_dir / "melody.json")
+        await melody_svc.export_midi(melody, project_dir / "melody.mid")
+
+        # Associar sílabas se houver letra
+        if project.lyrics:
+            from services.syllable import SyllableService
+            syllable_svc = SyllableService()
+            syllables = await syllable_svc.syllabify_text(
+                project.lyrics, project.language or "it"
+            )
+            melody_svc.assign_lyrics_to_notes(melody, syllables)
+            melody_svc.save_melody_json(melody, project_dir / "melody.json")
+            await melody_svc.export_midi(melody, project_dir / "melody.mid")
+
+        logger.info("melody_gerada", project_id=project.id, notes=len(melody.notes))
 
     async def _run_synthesis(self, project: Project, db: AsyncSession) -> None:
         """Sintetiza vocal — placeholder para Fase 3."""

@@ -16,6 +16,7 @@ import {
   Activity,
   Settings,
   Loader2,
+  PenTool,
 } from "lucide-react";
 
 const PIPELINE_STEPS = [
@@ -179,6 +180,27 @@ export default function ProjectPage() {
                 projectId={projectId}
                 filename={`instrumental.${project.audio_format}`}
               />
+            </div>
+          )}
+
+          {/* Melody Editor Link */}
+          {project.instrumental_filename && project.bpm && (
+            <div className="card">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+                <PenTool className="h-5 w-5 text-brand-400" />
+                Melodia
+              </h2>
+              <p className="mb-4 text-sm text-gray-400">
+                Crie ou edite a melodia vocal no piano roll. Extraia do
+                instrumental, importe MIDI ou desenhe manualmente.
+              </p>
+              <a
+                href={`/project/${projectId}/melody`}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Music className="h-4 w-4" />
+                Abrir Editor de Melodia
+              </a>
             </div>
           )}
 

@@ -83,6 +83,36 @@ class PipelineProgress(BaseModel):
     status: str = "processing"
 
 
+class MelodyNoteSchema(BaseModel):
+    """Schema de uma nota MIDI na melodia."""
+
+    start_time: float
+    end_time: float
+    duration: float = 0
+    midi_note: int = Field(ge=0, le=127)
+    note_name: str = ""
+    velocity: int = Field(default=100, ge=0, le=127)
+    lyric: str = ""
+
+
+class MelodyResponse(BaseModel):
+    """Resposta com dados de melodia."""
+
+    notes: list[MelodyNoteSchema]
+    bpm: float
+    time_signature: list[int]
+    total_notes: int
+
+
+class SyllabifyResponse(BaseModel):
+    """Resposta da segmentação silábica."""
+
+    syllables: list[str]
+    lines: list[list[str]]
+    total: int
+    assigned_to_melody: bool
+
+
 class ErrorResponse(BaseModel):
     """Schema padronizado de erro."""
 
