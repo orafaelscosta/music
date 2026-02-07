@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  # Redis — broker para Celery
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Backend — FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./storage:/app/storage
+      - ./engines:/app/engines
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./storage/vocal_studio.db
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_PATH=./storage
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - ./storage:/app/storage
+      - ./engines:/app/engines
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./storage/vocal_studio.db
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_PATH=./storage
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: celery -A workers.tasks worker --loglevel=info --concurrency=2
+
+  # Frontend — Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  redis_data:

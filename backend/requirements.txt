@@ -1,0 +1,31 @@
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+websockets==14.2
+
+# Database
+sqlalchemy==2.0.36
+aiosqlite==0.20.0
+
+# Task Queue
+celery[redis]==5.4.0
+redis==5.2.1
+
+# Audio Analysis
+librosa==0.10.2.post1
+soundfile==0.13.1
+numpy==2.2.2
+
+# AI Engines (Phase 1 - analysis only)
+# basic-pitch==0.4.1  # Phase 2
+# demucs==4.0.1       # Phase 3
+# pedalboard==0.9.16  # Phase 5
+
+# Utilities
+pydantic==2.10.4
+pydantic-settings==2.7.1
+structlog==24.4.0
+python-dotenv==1.0.1
+aiofiles==24.1.0
+httpx==0.28.1

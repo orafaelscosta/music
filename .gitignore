@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# Storage (keep structure, ignore content)
+storage/projects/*/
+storage/*.db
+
+# Build
+.next/
+dist/
+build/
+*.egg-info/
+
+# AI Models (large files)
+engines/diffsinger/*.onnx
+engines/ace-step/models/
+engines/applio/models/
+engines/voicebanks/**/*.pth
+engines/voicebanks/**/*.onnx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+celerybeat-schedule
