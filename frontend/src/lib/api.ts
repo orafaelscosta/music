@@ -57,6 +57,37 @@ export interface MelodyData {
   total_notes: number;
 }
 
+export interface SynthesisParams {
+  engine: "diffsinger" | "acestep";
+  voicebank: string;
+  language?: string;
+  breathiness?: number;
+  tension?: number;
+  energy?: number;
+  voicing?: number;
+  pitch_deviation?: number;
+  gender?: number;
+  guidance_scale?: number;
+  num_inference_steps?: number;
+  seed?: number;
+  preview_seconds?: number;
+}
+
+export interface SynthesisResponse {
+  status: string;
+  engine: string;
+  output_file: string;
+  duration_seconds: number | null;
+  download_url: string;
+}
+
+export interface VariationsResponse {
+  project_id: string;
+  engine: string;
+  variations: { index: number; file: string; download_url: string }[];
+  total: number;
+}
+
 export interface SyllabifyResponse {
   syllables: string[];
   lines: string[][];
@@ -239,6 +270,47 @@ class ApiClient {
     return this.request(`/api/melody/${projectId}/syllabify`, {
       method: "POST",
     });
+  }
+
+  // Synthesis
+  async renderVocal(
+    projectId: string,
+    params: SynthesisParams
+  ): Promise<SynthesisResponse> {
+    return this.request(`/api/synthesis/${projectId}/render`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async previewVocal(
+    projectId: string,
+    params: SynthesisParams
+  ): Promise<SynthesisResponse> {
+    return this.request(`/api/synthesis/${projectId}/preview`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async generateVariations(
+    projectId: string,
+    params: SynthesisParams,
+    count: number = 3
+  ): Promise<VariationsResponse> {
+    return this.request(
+      `/api/synthesis/${projectId}/variations?count=${count}`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
+  async getSynthesisStatus(
+    projectId: string
+  ): Promise<Record<string, unknown>> {
+    return this.request(`/api/synthesis/${projectId}/status`);
   }
 
   // Audio download URL

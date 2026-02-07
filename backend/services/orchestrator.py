@@ -137,10 +137,43 @@ class PipelineOrchestrator:
         logger.info("melody_gerada", project_id=project.id, notes=len(melody.notes))
 
     async def _run_synthesis(self, project: Project, db: AsyncSession) -> None:
-        """Sintetiza vocal — placeholder para Fase 3."""
-        logger.info("synthesis_placeholder", project_id=project.id)
+        """Sintetiza vocal usando DiffSinger ou ACE-Step."""
+        from config import settings
+
         project.status = ProjectStatus.SYNTHESIZING
-        # Será implementado na Fase 3 com DiffSinger/ACE-Step
+
+        project_dir = settings.projects_path / project.id
+        melody_json = project_dir / "melody.json"
+        output_path = project_dir / "vocals_raw.wav"
+
+        engine = project.synthesis_engine or "diffsinger"
+        language = project.language or "it"
+
+        if engine == "diffsinger":
+            from services.diffsinger import DiffSingerConfig, DiffSingerService
+
+            svc = DiffSingerService()
+            config = DiffSingerConfig(
+                voicebank=project.voice_model or "leif",
+                language=language,
+            )
+            await svc.synthesize(melody_json, output_path, config)
+
+        elif engine == "acestep":
+            from services.acestep import ACEStepConfig, ACEStepService
+
+            svc = ACEStepService()
+            config = ACEStepConfig(
+                lyrics=project.lyrics or "",
+                language=language,
+                duration_seconds=project.duration_seconds or 30.0,
+            )
+            instrumental_path = None
+            if project.audio_format:
+                instrumental_path = project_dir / f"instrumental.{project.audio_format}"
+            await svc.generate(output_path, config, instrumental_path)
+
+        logger.info("sintese_concluida", project_id=project.id, engine=engine)
 
     async def _run_refinement(self, project: Project, db: AsyncSession) -> None:
         """Refina timbre vocal — placeholder para Fase 4."""
