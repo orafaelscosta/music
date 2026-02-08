@@ -24,10 +24,26 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
 ) -> Project:
     """Cria um novo projeto de vocal."""
+    # Aplicar configurações do template, se fornecido
+    synthesis_engine = data.synthesis_engine or "diffsinger"
+    description = data.description
+
+    if data.template_id:
+        from api.routes.templates import PROJECT_TEMPLATES
+
+        template = next(
+            (t for t in PROJECT_TEMPLATES if t["id"] == data.template_id), None
+        )
+        if template:
+            synthesis_engine = template["synthesis_engine"]
+            if not description:
+                description = template["description"]
+
     project = Project(
         name=data.name,
-        description=data.description,
+        description=description,
         language=data.language,
+        synthesis_engine=synthesis_engine,
     )
     db.add(project)
     await db.commit()
@@ -79,6 +95,35 @@ async def update_project(
     await db.refresh(project)
     logger.info("projeto_atualizado", project_id=project.id, fields=list(update_data.keys()))
     return project
+
+
+@router.post("/{project_id}/duplicate", response_model=ProjectResponse, status_code=201)
+async def duplicate_project(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> Project:
+    """Duplica um projeto existente (sem arquivos de áudio)."""
+    original = await db.get(Project, project_id)
+    if not original:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+
+    new_project = Project(
+        name=f"{original.name} (cópia)",
+        description=original.description,
+        language=original.language,
+        synthesis_engine=original.synthesis_engine,
+        voice_model=original.voice_model,
+        lyrics=original.lyrics,
+    )
+    db.add(new_project)
+    await db.commit()
+    await db.refresh(new_project)
+    logger.info(
+        "projeto_duplicado",
+        original_id=project_id,
+        new_id=new_project.id,
+    )
+    return new_project
 
 
 @router.delete("/{project_id}", status_code=204)

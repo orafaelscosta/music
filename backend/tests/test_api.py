@@ -270,3 +270,233 @@ class TestSynthesisAPI:
         assert "project_id" in data
         assert "files" in data
         assert "engine" in data
+
+
+# ============================================================
+# Testes de Templates
+# ============================================================
+class TestTemplatesAPI:
+    """Testes para rotas de templates."""
+
+    @pytest.mark.asyncio
+    async def test_list_templates(self, client):
+        """Lista todos os templates disponíveis."""
+        response = await client.get("/api/templates")
+        assert response.status_code == 200
+        data = response.json()
+        assert "templates" in data
+        assert "total" in data
+        assert data["total"] == 5
+        assert len(data["templates"]) == 5
+
+    @pytest.mark.asyncio
+    async def test_template_has_required_fields(self, client):
+        """Cada template tem todos os campos obrigatórios."""
+        response = await client.get("/api/templates")
+        templates = response.json()["templates"]
+        required_fields = {"id", "name", "description", "language", "synthesis_engine", "mix_preset", "icon"}
+        for template in templates:
+            assert required_fields.issubset(set(template.keys())), (
+                f"Template {template.get('id')} faltando campos"
+            )
+
+    @pytest.mark.asyncio
+    async def test_get_template_by_id(self, client):
+        """Busca template específico por ID."""
+        response = await client.get("/api/templates/italian_opera")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == "italian_opera"
+        assert data["language"] == "it"
+        assert data["synthesis_engine"] == "diffsinger"
+
+    @pytest.mark.asyncio
+    async def test_get_template_not_found(self, client):
+        """Busca template inexistente retorna erro."""
+        response = await client.get("/api/templates/inexistente")
+        assert response.status_code == 200
+        data = response.json()
+        assert "error" in data
+
+    @pytest.mark.asyncio
+    async def test_template_engines_valid(self, client):
+        """Engines dos templates são válidos."""
+        response = await client.get("/api/templates")
+        templates = response.json()["templates"]
+        valid_engines = {"diffsinger", "acestep"}
+        for template in templates:
+            assert template["synthesis_engine"] in valid_engines
+
+
+# ============================================================
+# Testes de Batch Processing
+# ============================================================
+class TestBatchAPI:
+    """Testes para rotas de batch processing."""
+
+    @pytest.mark.asyncio
+    async def test_batch_status_empty(self, client):
+        """Status do batch retorna resumo vazio."""
+        response = await client.get("/api/batch/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "total" in data
+        assert "by_status" in data
+        assert "processing" in data
+
+    @pytest.mark.asyncio
+    async def test_batch_status_with_projects(self, client):
+        """Status do batch conta projetos corretamente."""
+        await client.post("/api/projects", json={"name": "Batch P1"})
+        await client.post("/api/projects", json={"name": "Batch P2"})
+
+        response = await client.get("/api/batch/status")
+        data = response.json()
+        assert data["total"] >= 2
+        assert "created" in data["by_status"]
+
+    @pytest.mark.asyncio
+    async def test_batch_start_empty_list(self, client):
+        """Batch start com lista vazia retorna tudo vazio."""
+        response = await client.post(
+            "/api/batch/start",
+            json={"project_ids": []},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["started"] == []
+        assert data["skipped"] == []
+        assert data["errors"] == []
+
+    @pytest.mark.asyncio
+    async def test_batch_start_not_found(self, client):
+        """Batch start com ID inexistente retorna erro."""
+        response = await client.post(
+            "/api/batch/start",
+            json={"project_ids": ["nao-existe"]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["errors"]) == 1
+        assert data["errors"][0]["project_id"] == "nao-existe"
+
+    @pytest.mark.asyncio
+    async def test_batch_start_skips_no_instrumental(self, client):
+        """Batch start pula projetos sem instrumental."""
+        create_resp = await client.post("/api/projects", json={"name": "No Inst"})
+        project_id = create_resp.json()["id"]
+
+        response = await client.post(
+            "/api/batch/start",
+            json={"project_ids": [project_id]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert project_id in data["skipped"]
+        assert project_id not in data["started"]
+
+
+# ============================================================
+# Testes de Project Template Application
+# ============================================================
+class TestTemplateApplication:
+    """Testes para aplicação de templates ao criar projetos."""
+
+    @pytest.mark.asyncio
+    async def test_create_with_template(self, client):
+        """Criar projeto com template aplica engine e descrição."""
+        response = await client.post(
+            "/api/projects",
+            json={
+                "name": "Meu Opera",
+                "template_id": "italian_opera",
+                "language": "it",
+            },
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["synthesis_engine"] == "diffsinger"
+        assert data["description"] == "Vocal lírico italiano com DiffSinger"
+
+    @pytest.mark.asyncio
+    async def test_create_with_template_keeps_custom_description(self, client):
+        """Template não sobrescreve descrição fornecida."""
+        response = await client.post(
+            "/api/projects",
+            json={
+                "name": "Custom",
+                "description": "Minha descrição",
+                "template_id": "pop_portuguese",
+                "language": "pt",
+            },
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["description"] == "Minha descrição"
+        assert data["synthesis_engine"] == "acestep"
+
+    @pytest.mark.asyncio
+    async def test_create_with_explicit_engine(self, client):
+        """Engine explícito tem prioridade sobre padrão."""
+        response = await client.post(
+            "/api/projects",
+            json={
+                "name": "Explicit Engine",
+                "synthesis_engine": "acestep",
+                "language": "en",
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["synthesis_engine"] == "acestep"
+
+    @pytest.mark.asyncio
+    async def test_create_with_invalid_template(self, client):
+        """Template inexistente é ignorado, usa engine padrão."""
+        response = await client.post(
+            "/api/projects",
+            json={
+                "name": "Bad Template",
+                "template_id": "nao_existe",
+                "language": "it",
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["synthesis_engine"] == "diffsinger"
+
+
+# ============================================================
+# Testes de Duplicação de Projeto
+# ============================================================
+class TestDuplicateProject:
+    """Testes para duplicação de projetos."""
+
+    @pytest.mark.asyncio
+    async def test_duplicate_project(self, client):
+        """Duplica projeto com sucesso."""
+        create_resp = await client.post(
+            "/api/projects",
+            json={"name": "Original", "description": "Desc", "language": "pt"},
+        )
+        project_id = create_resp.json()["id"]
+
+        # Adicionar lyrics ao original
+        await client.patch(
+            f"/api/projects/{project_id}",
+            json={"lyrics": "La la la"},
+        )
+
+        response = await client.post(f"/api/projects/{project_id}/duplicate")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "Original (cópia)"
+        assert data["description"] == "Desc"
+        assert data["language"] == "pt"
+        assert data["lyrics"] == "La la la"
+        assert data["id"] != project_id
+        assert data["status"] == "created"
+
+    @pytest.mark.asyncio
+    async def test_duplicate_not_found(self, client):
+        """Duplicar projeto inexistente retorna 404."""
+        response = await client.post("/api/projects/inexistente/duplicate")
+        assert response.status_code == 404

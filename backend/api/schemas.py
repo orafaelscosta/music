@@ -13,6 +13,8 @@ class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     language: str = Field(default="it", pattern="^(it|pt|en|es|fr|de|ja)$")
+    synthesis_engine: str | None = Field(None, pattern="^(diffsinger|acestep)$")
+    template_id: str | None = None
 
 
 class ProjectUpdate(BaseModel):

@@ -135,6 +135,8 @@ class ApiClient {
     name: string;
     description?: string;
     language?: string;
+    synthesis_engine?: string;
+    template_id?: string;
   }): Promise<Project> {
     return this.request("/api/projects", {
       method: "POST",
@@ -162,6 +164,10 @@ class ApiClient {
 
   async deleteProject(id: string): Promise<void> {
     return this.request(`/api/projects/${id}`, { method: "DELETE" });
+  }
+
+  async duplicateProject(id: string): Promise<Project> {
+    return this.request(`/api/projects/${id}/duplicate`, { method: "POST" });
   }
 
   // Upload de áudio

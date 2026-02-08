@@ -9,6 +9,7 @@ import {
   Music,
   Clock,
   Trash2,
+  Copy,
   ArrowRight,
   Loader2,
 } from "lucide-react";
@@ -48,8 +49,9 @@ export default function DashboardPage() {
       );
       return api.createProject({
         name: newName,
-        description: newDescription || template?.description || undefined,
+        description: newDescription || undefined,
         language: template?.language || newLanguage,
+        template_id: selectedTemplate || undefined,
       });
     },
     onSuccess: () => {
@@ -63,6 +65,13 @@ export default function DashboardPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.deleteProject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: (id: string) => api.duplicateProject(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
@@ -297,13 +306,22 @@ export default function DashboardPage() {
                 )}
 
               <div className="flex items-center justify-between">
-                <button
-                  onClick={() => deleteMutation.mutate(project.id)}
-                  className="text-gray-600 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
-                  title="Excluir projeto"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => duplicateMutation.mutate(project.id)}
+                    className="text-gray-600 opacity-0 transition-opacity hover:text-brand-400 group-hover:opacity-100"
+                    title="Duplicar projeto"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteMutation.mutate(project.id)}
+                    className="text-gray-600 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+                    title="Excluir projeto"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
                 <a
                   href={`/project/${project.id}`}
                   className="flex items-center gap-1 text-sm text-brand-400 transition-colors hover:text-brand-300"

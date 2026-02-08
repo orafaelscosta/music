@@ -23,6 +23,7 @@ import {
   Mic,
   PenTool,
   Sliders,
+  GitCompare,
 } from "lucide-react";
 
 const PIPELINE_STEPS = [
@@ -305,7 +306,7 @@ export default function ProjectPage() {
               <h2 className="mb-4 text-lg font-semibold text-white">
                 Pipeline de Produção
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <a
                   href={`/project/${projectId}/melody`}
                   className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
@@ -333,6 +334,13 @@ export default function ProjectPage() {
                 >
                   <Music2 className="h-4 w-4" />
                   Mixagem
+                </a>
+                <a
+                  href={`/project/${projectId}/compare`}
+                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-purple-500 hover:text-purple-400 transition-colors"
+                >
+                  <GitCompare className="h-4 w-4" />
+                  Comparar
                 </a>
               </div>
             </div>
