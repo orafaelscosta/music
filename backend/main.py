@@ -4,7 +4,7 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import audio, melody, mix, pipeline, projects, refinement, synthesis, voices
+from api.routes import audio, batch, melody, mix, pipeline, projects, refinement, synthesis, templates, voices
 from api.websocket import websocket_endpoint
 from config import settings
 from database import init_db
@@ -46,6 +46,8 @@ app.include_router(melody.router, prefix="/api")
 app.include_router(synthesis.router, prefix="/api")
 app.include_router(refinement.router, prefix="/api")
 app.include_router(mix.router, prefix="/api")
+app.include_router(templates.router, prefix="/api")
+app.include_router(batch.router, prefix="/api")
 
 # WebSocket
 app.websocket("/ws/{project_id}")(websocket_endpoint)

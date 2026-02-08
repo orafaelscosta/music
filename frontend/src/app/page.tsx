@@ -13,12 +13,28 @@ import {
   Loader2,
 } from "lucide-react";
 
+interface ProjectTemplate {
+  id: string;
+  name: string;
+  description: string;
+  language: string;
+  synthesis_engine: string;
+  mix_preset: string;
+  icon: string;
+}
+
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newLanguage, setNewLanguage] = useState("it");
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+
+  const { data: templatesData } = useQuery({
+    queryKey: ["templates"],
+    queryFn: () => api.listTemplates(),
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["projects"],
@@ -26,17 +42,22 @@ export default function DashboardPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () =>
-      api.createProject({
+    mutationFn: () => {
+      const template = templatesData?.templates?.find(
+        (t: ProjectTemplate) => t.id === selectedTemplate
+      );
+      return api.createProject({
         name: newName,
-        description: newDescription || undefined,
-        language: newLanguage,
-      }),
+        description: newDescription || template?.description || undefined,
+        language: template?.language || newLanguage,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setShowCreate(false);
       setNewName("");
       setNewDescription("");
+      setSelectedTemplate(null);
     },
   });
 
@@ -93,6 +114,40 @@ export default function DashboardPage() {
               }}
             >
               <div className="space-y-4">
+                {/* Template selector */}
+                {templatesData?.templates && templatesData.templates.length > 0 && (
+                  <div>
+                    <label className="mb-2 block text-sm text-gray-400">
+                      Template (opcional)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {templatesData.templates.map((t: ProjectTemplate) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            if (selectedTemplate === t.id) {
+                              setSelectedTemplate(null);
+                            } else {
+                              setSelectedTemplate(t.id);
+                              setNewLanguage(t.language);
+                              if (!newName) setNewName(t.name);
+                            }
+                          }}
+                          className={`rounded-lg border p-2 text-left text-xs transition-colors ${
+                            selectedTemplate === t.id
+                              ? "border-brand-500 bg-brand-500/10 text-brand-400"
+                              : "border-gray-700 text-gray-400 hover:border-gray-600"
+                          }`}
+                        >
+                          <span className="font-medium">{t.name}</span>
+                          <br />
+                          <span className="text-gray-600">{t.description}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="mb-1 block text-sm text-gray-400">
                     Nome do projeto

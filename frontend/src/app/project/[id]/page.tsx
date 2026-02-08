@@ -12,6 +12,8 @@ import UploadZone from "@/components/UploadZone";
 import LyricsEditor from "@/components/LyricsEditor";
 import { showToast } from "@/components/Toast";
 import {
+  CheckCircle,
+  Download,
   Music,
   Music2,
   FileAudio,
@@ -195,6 +197,55 @@ export default function ProjectPage() {
       {project.error_message && (
         <div className="mb-8 rounded-lg border border-red-800 bg-red-900/20 p-4">
           <p className="text-sm text-red-400">{project.error_message}</p>
+        </div>
+      )}
+
+      {/* Results Section — visible when completed */}
+      {project.status === "completed" && (
+        <div className="mb-8 rounded-lg border border-green-800 bg-green-900/10 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <CheckCircle className="h-6 w-6 text-green-400" />
+            <h2 className="text-lg font-semibold text-green-400">
+              Projeto Concluído
+            </h2>
+          </div>
+          <p className="mb-4 text-sm text-gray-400">
+            Todos os passos do pipeline foram finalizados. Ouça a mixagem final
+            ou exporte em diferentes formatos.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-700 p-4">
+              <h3 className="mb-2 text-sm font-medium text-white">
+                Mixagem Final
+              </h3>
+              <AudioPlayer projectId={projectId} filename="mix_final.wav" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-white mb-2">
+                Downloads
+              </h3>
+              {["mix_final.wav", "vocals_refined.wav", "vocals_raw.wav", "melody.mid"].map(
+                (file) => (
+                  <a
+                    key={file}
+                    href={api.getAudioUrl(projectId, file)}
+                    className="flex items-center gap-2 rounded-lg border border-gray-700 p-2 text-xs text-gray-400 hover:border-gray-600 hover:text-gray-300"
+                    download
+                  >
+                    <Download className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{file}</span>
+                  </a>
+                )
+              )}
+              <a
+                href={`/project/${projectId}/mix`}
+                className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-2"
+              >
+                <Sliders className="h-4 w-4" />
+                Ajustar Mix e Exportar
+              </a>
+            </div>
+          </div>
         </div>
       )}
 

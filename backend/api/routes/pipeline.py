@@ -106,8 +106,8 @@ async def get_pipeline_status(
     project_dir = settings.projects_path / project_id
     files_exist = {}
     for filename in [
-        "instrumental", "melody.mid", "vocals_raw.wav",
-        "vocals_refined.wav", "final_mix.wav",
+        "instrumental", "melody.mid", "melody.json", "vocals_raw.wav",
+        "vocals_refined.wav", "mix_final.wav",
     ]:
         if filename == "instrumental":
             files_exist[filename] = bool(
@@ -146,7 +146,7 @@ async def get_pipeline_status(
                 "available": files_exist.get("vocals_raw.wav", False),
             },
             "mix": {
-                "completed": files_exist.get("final_mix.wav", False),
+                "completed": files_exist.get("mix_final.wav", False),
                 "available": files_exist.get("vocals_raw.wav", False)
                 or files_exist.get("vocals_refined.wav", False),
             },

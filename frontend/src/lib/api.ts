@@ -418,6 +418,40 @@ class ApiClient {
     });
   }
 
+  // Templates
+  async listTemplates(): Promise<{
+    templates: {
+      id: string;
+      name: string;
+      description: string;
+      language: string;
+      synthesis_engine: string;
+      mix_preset: string;
+      icon: string;
+    }[];
+    total: number;
+  }> {
+    return this.request("/api/templates");
+  }
+
+  // Batch
+  async batchStartPipeline(
+    projectIds: string[]
+  ): Promise<{ started: string[]; skipped: string[]; errors: { project_id: string; error: string }[] }> {
+    return this.request("/api/batch/start", {
+      method: "POST",
+      body: JSON.stringify({ project_ids: projectIds }),
+    });
+  }
+
+  async batchStatus(): Promise<{
+    total: number;
+    by_status: Record<string, number>;
+    processing: { id: string; name: string; status: string; step: string | null; progress: number }[];
+  }> {
+    return this.request("/api/batch/status");
+  }
+
   // Audio download URL
   getAudioUrl(projectId: string, filename: string): string {
     return `${this.baseUrl}/api/audio/${projectId}/${filename}`;
