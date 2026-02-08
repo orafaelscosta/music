@@ -34,9 +34,13 @@ async def start_pipeline(
         raise HTTPException(status_code=409, detail="Pipeline já em execução")
 
     # Dispara task Celery para processamento completo
-    from workers.tasks import run_full_pipeline
-
-    run_full_pipeline.delay(project_id)
+    pipeline_queued = False
+    try:
+        from workers.tasks import run_full_pipeline
+        run_full_pipeline.delay(project_id)
+        pipeline_queued = True
+    except Exception as e:
+        logger.warning("celery_indisponivel", error=str(e))
 
     project.status = ProjectStatus.ANALYZING
     project.current_step = PipelineStep.ANALYSIS
@@ -44,7 +48,10 @@ async def start_pipeline(
     await db.commit()
     await db.refresh(project)
 
-    logger.info("pipeline_iniciado", project_id=project_id)
+    if not pipeline_queued:
+        logger.info("pipeline_iniciado_sem_celery", project_id=project_id)
+    else:
+        logger.info("pipeline_iniciado", project_id=project_id)
     return project
 
 
@@ -172,9 +179,13 @@ async def quick_start(
     project.musical_key = analysis.musical_key
 
     # Disparar pipeline completo via Celery
-    from workers.tasks import run_full_pipeline
-
-    run_full_pipeline.delay(project.id)
+    pipeline_queued = False
+    try:
+        from workers.tasks import run_full_pipeline
+        run_full_pipeline.delay(project.id)
+        pipeline_queued = True
+    except Exception as e:
+        logger.warning("celery_indisponivel_quick_start", error=str(e))
 
     project.status = ProjectStatus.ANALYZING
     project.current_step = PipelineStep.ANALYSIS
