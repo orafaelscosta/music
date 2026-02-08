@@ -209,18 +209,20 @@ export default function QuickStartPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       {/* Header */}
-      <div className="mb-10 text-center">
+      <div className="mb-10 text-center animate-slide-down">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="ClovisAI" className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-lg shadow-brand-500/20" />
-        <h1 className="text-3xl font-bold text-white">ClovisAI</h1>
-        <p className="mt-2 text-gray-400">
+        <img src="/logo.svg" alt="ClovisAI" className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-lg shadow-brand-500/20 animate-float" />
+        <h1 className="text-3xl font-bold tracking-tight text-white">
+          Clovis<span className="bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">AI</span>
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">
           Configure o vocal dos seus sonhos em poucos cliques
         </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-5">
         {/* Left column: Upload + Lyrics */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 animate-slide-up stagger-1">
           {/* Upload */}
           <div className="card">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
@@ -322,7 +324,7 @@ export default function QuickStartPage() {
         </div>
 
         {/* Right column: Style & Controls */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-6 animate-slide-up stagger-2">
           {/* Vocal Style */}
           <div className="card">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
@@ -524,32 +526,32 @@ export default function QuickStartPage() {
       </div>
 
       {/* Sticky bottom bar */}
-      <div className="sticky bottom-0 z-40 -mx-4 mt-8 border-t border-gray-800 bg-gray-950/90 px-4 py-4 backdrop-blur-lg">
+      <div className="sticky bottom-0 z-40 -mx-4 mt-8 border-t border-white/[0.06] bg-gray-950/80 px-4 py-4 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          {/* Summary */}
-          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500">
-            <span className={file ? "text-green-400" : "text-gray-600"}>
+          {/* Summary pills */}
+          <div className="hidden sm:flex items-center gap-2 text-xs">
+            <span className={`rounded-md px-2 py-1 ${file ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-gray-800/50 text-gray-600"}`}>
               {file ? file.name.substring(0, 20) : "Sem áudio"}
             </span>
-            <span className="text-gray-700">|</span>
-            <span className={lyrics.trim() ? "text-green-400" : "text-gray-600"}>
+            <span className={`rounded-md px-2 py-1 ${lyrics.trim() ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-gray-800/50 text-gray-600"}`}>
               {lyrics.trim() ? `${lyrics.trim().split("\n").length} linhas` : "Sem letra"}
             </span>
-            <span className="text-gray-700">|</span>
-            <span className="text-gray-400">
+            <span className="rounded-md border border-gray-700/50 bg-gray-800/30 px-2 py-1 text-gray-400">
               {VOCAL_STYLES.find((s) => s.id === vocalStyle)?.label}
             </span>
-            <span className="text-gray-700">|</span>
-            <span className="text-gray-400 uppercase">{language}</span>
-            <span className="text-gray-700">|</span>
-            <span className="text-gray-400">{engine === "diffsinger" ? "DiffSinger" : "ACE-Step"}</span>
+            <span className="rounded-md border border-gray-700/50 bg-gray-800/30 px-2 py-1 font-medium uppercase text-gray-400">
+              {language}
+            </span>
+            <span className="rounded-md border border-gray-700/50 bg-gray-800/30 px-2 py-1 text-gray-400">
+              {engine === "diffsinger" ? "DiffSinger" : "ACE-Step"}
+            </span>
           </div>
 
           {/* Action */}
           <button
             onClick={() => quickStartMutation.mutate()}
             disabled={!canSubmit}
-            className="btn-primary flex items-center gap-2 px-8 py-3 text-base shadow-lg shadow-brand-600/20 disabled:shadow-none"
+            className="btn-primary flex items-center gap-2 px-8 py-3 text-base shadow-xl shadow-brand-600/30 disabled:shadow-none"
           >
             {quickStartMutation.isPending ? (
               <>
