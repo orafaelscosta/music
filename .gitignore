@@ -12,6 +12,7 @@ venv/
 # Storage (keep structure, ignore content)
 storage/projects/*/
 storage/*.db
+backend/storage/
 
 # Build
 .next/
