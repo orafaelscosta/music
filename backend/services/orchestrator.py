@@ -176,10 +176,25 @@ class PipelineOrchestrator:
         logger.info("sintese_concluida", project_id=project.id, engine=engine)
 
     async def _run_refinement(self, project: Project, db: AsyncSession) -> None:
-        """Refina timbre vocal — placeholder para Fase 4."""
-        logger.info("refinement_placeholder", project_id=project.id)
+        """Refina timbre vocal usando RVC/Applio."""
+        from config import settings
+        from services.rvc import RVCConfig, RVCService
+
         project.status = ProjectStatus.REFINING
-        # Será implementado na Fase 4 com Applio/RVC
+        project_dir = settings.projects_path / project.id
+        input_path = project_dir / "vocals_raw.wav"
+        output_path = project_dir / "vocals_refined.wav"
+
+        if not input_path.exists():
+            # Bypass se não houver vocal sintetizado
+            logger.warning("refinement_bypass_sem_vocal", project_id=project.id)
+            return
+
+        svc = RVCService()
+        config = RVCConfig(model_name=project.voice_model or "")
+        await svc.convert(input_path, output_path, config)
+
+        logger.info("refinement_concluido", project_id=project.id)
 
     async def _run_mix(self, project: Project, db: AsyncSession) -> None:
         """Mixagem final — placeholder para Fase 5."""

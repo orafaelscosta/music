@@ -313,6 +313,48 @@ class ApiClient {
     return this.request(`/api/synthesis/${projectId}/status`);
   }
 
+  // Refinement
+  async refineVocal(
+    projectId: string,
+    params: {
+      model_name: string;
+      pitch_shift: number;
+      index_rate: number;
+      filter_radius: number;
+      rms_mix_rate: number;
+      protect: number;
+      f0_method: string;
+    }
+  ): Promise<{ status: string; output_file: string; download_url: string }> {
+    return this.request(`/api/refinement/${projectId}/convert`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async bypassRefinement(
+    projectId: string
+  ): Promise<{ status: string; output_file: string }> {
+    return this.request(`/api/refinement/${projectId}/bypass`, {
+      method: "POST",
+    });
+  }
+
+  async getRefinementComparison(
+    projectId: string
+  ): Promise<{
+    before: { file: string; download_url: string } | null;
+    after: { file: string; download_url: string } | null;
+  }> {
+    return this.request(`/api/refinement/${projectId}/compare`);
+  }
+
+  async listRVCModels(
+    projectId: string
+  ): Promise<{ models: { name: string; has_index: boolean }[]; total: number }> {
+    return this.request(`/api/refinement/${projectId}/models`);
+  }
+
   // Audio download URL
   getAudioUrl(projectId: string, filename: string): string {
     return `${this.baseUrl}/api/audio/${projectId}/${filename}`;
