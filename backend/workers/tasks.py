@@ -10,7 +10,7 @@ from config import settings
 logger = structlog.get_logger()
 
 celery_app = Celery(
-    "vocal_studio",
+    "clovisai",
     broker=settings.redis_url,
     backend=settings.redis_url,
 )

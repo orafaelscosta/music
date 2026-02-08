@@ -1,9 +1,9 @@
 #!/bin/bash
-# AI Vocal Studio — Download de modelos AI
+# ClovisAI — Download de modelos AI
 set -e
 
 echo "=========================================="
-echo "  AI Vocal Studio — Download de Modelos"
+echo "  ClovisAI — Download de Modelos"
 echo "=========================================="
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

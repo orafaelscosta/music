@@ -210,10 +210,9 @@ export default function QuickStartPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       {/* Header */}
       <div className="mb-10 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-purple-600 shadow-lg shadow-brand-500/20">
-          <Zap className="h-8 w-8 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold text-white">Vocal Studio</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt="ClovisAI" className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-lg shadow-brand-500/20" />
+        <h1 className="text-3xl font-bold text-white">ClovisAI</h1>
         <p className="mt-2 text-gray-400">
           Configure o vocal dos seus sonhos em poucos cliques
         </p>

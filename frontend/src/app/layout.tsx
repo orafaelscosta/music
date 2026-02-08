@@ -4,8 +4,8 @@ import { Providers } from "@/components/Providers";
 import ToastContainer from "@/components/Toast";
 
 export const metadata: Metadata = {
-  title: "AI Vocal Studio",
-  description: "Sistema de geração de vocais por IA sobre instrumentais",
+  title: "ClovisAI - Music Creation",
+  description: "Sistema de criação musical com IA",
 };
 
 export default function RootLayout({
@@ -21,23 +21,10 @@ export default function RootLayout({
             <header className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm">
               <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
                 <a href="/" className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
-                    <svg
-                      className="h-5 w-5 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                      />
-                    </svg>
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.svg" alt="ClovisAI" className="h-9 w-9 rounded-lg" />
                   <span className="text-lg font-bold text-white">
-                    AI Vocal Studio
+                    ClovisAI
                   </span>
                 </a>
                 <nav className="flex items-center gap-4">
