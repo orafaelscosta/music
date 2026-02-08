@@ -77,3 +77,31 @@ async def list_engines() -> dict:
     }
 
     return engines
+
+
+@router.post("/engines/{engine_name}/test")
+async def test_engine(engine_name: str) -> dict:
+    """Testa se um engine de IA está disponível."""
+    available = False
+
+    if engine_name == "diffsinger":
+        available = settings.diffsinger_path.exists() and any(
+            settings.diffsinger_path.glob("*.py")
+        )
+    elif engine_name == "acestep":
+        available = settings.acestep_path.exists() and any(
+            settings.acestep_path.glob("*.py")
+        )
+    elif engine_name == "applio":
+        from services.rvc import RVCService
+        svc = RVCService()
+        available = svc.is_available()
+    elif engine_name == "pedalboard":
+        try:
+            import pedalboard  # noqa: F401
+            available = True
+        except ImportError:
+            available = False
+
+    logger.info("engine_testado", engine=engine_name, available=available)
+    return {"engine": engine_name, "available": available}

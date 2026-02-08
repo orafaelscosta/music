@@ -405,6 +405,19 @@ class ApiClient {
     return this.request(`/api/mix/${projectId}/presets`);
   }
 
+  // System
+  async healthCheck(): Promise<Record<string, string>> {
+    return this.request("/api/health");
+  }
+
+  async testEngine(
+    engine: string
+  ): Promise<{ engine: string; available: boolean }> {
+    return this.request(`/api/voices/engines/${engine}/test`, {
+      method: "POST",
+    });
+  }
+
   // Audio download URL
   getAudioUrl(projectId: string, filename: string): string {
     return `${this.baseUrl}/api/audio/${projectId}/${filename}`;

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import ToastContainer from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "AI Vocal Studio",
@@ -47,16 +48,17 @@ export default function RootLayout({
                     Projetos
                   </a>
                   <a
-                    href="/docs"
+                    href="/settings"
                     className="text-sm text-gray-400 transition-colors hover:text-white"
                   >
-                    Docs
+                    Configurações
                   </a>
                 </nav>
               </div>
             </header>
             <main className="flex-1">{children}</main>
           </div>
+          <ToastContainer />
         </Providers>
       </body>
     </html>

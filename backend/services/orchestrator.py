@@ -3,6 +3,7 @@
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.websocket import manager
 from models.project import PipelineStep, Project, ProjectStatus
 
 logger = structlog.get_logger()
@@ -37,11 +38,22 @@ class PipelineOrchestrator:
                 continue  # Upload já foi feito
 
             try:
+                await manager.send_progress(
+                    project_id, step.value, 0,
+                    message=f"Iniciando {step.value}...", status="processing",
+                )
                 await self.run_step(project, step, db)
+                await manager.send_progress(
+                    project_id, step.value, 100,
+                    message=f"{step.value} concluído", status="completed",
+                )
             except Exception as e:
                 project.status = ProjectStatus.ERROR
                 project.error_message = f"Erro no step {step.value}: {str(e)}"
                 await db.commit()
+                await manager.broadcast_error(
+                    project_id, f"Erro no step {step.value}: {str(e)}"
+                )
                 logger.error(
                     "pipeline_erro",
                     project_id=project_id,
@@ -53,6 +65,10 @@ class PipelineOrchestrator:
         project.status = ProjectStatus.COMPLETED
         project.progress = 100
         await db.commit()
+        await manager.send_progress(
+            project_id, "completed", 100,
+            message="Pipeline concluído!", status="completed",
+        )
         logger.info("pipeline_completo_concluido", project_id=project_id)
 
     async def run_step(

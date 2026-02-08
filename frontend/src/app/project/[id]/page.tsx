@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -10,6 +10,7 @@ import AudioPlayer from "@/components/AudioPlayer";
 import PipelineProgress from "@/components/PipelineProgress";
 import UploadZone from "@/components/UploadZone";
 import LyricsEditor from "@/components/LyricsEditor";
+import { showToast } from "@/components/Toast";
 import {
   Music,
   Music2,
@@ -60,12 +61,52 @@ export default function ProjectPage() {
       if (msg.type === "progress") {
         setWsProgress(msg);
         refetch();
+        // Toast notifications for pipeline events
+        if (msg.status === "completed" && msg.step === "completed") {
+          showToast({
+            type: "success",
+            title: "Pipeline concluído!",
+            message: "Todos os passos foram finalizados com sucesso.",
+          });
+        } else if (msg.status === "error") {
+          showToast({
+            type: "error",
+            title: "Erro no pipeline",
+            message: msg.message || "Ocorreu um erro durante o processamento.",
+            duration: 8000,
+          });
+        } else if (msg.status === "completed" && msg.step) {
+          showToast({
+            type: "info",
+            title: `${msg.step} concluído`,
+            duration: 3000,
+          });
+        }
       }
     });
 
     ws.connect();
     return () => ws.disconnect();
   }, [projectId, refetch]);
+
+  const pipelineMutation = useMutation({
+    mutationFn: () => api.startPipeline(projectId),
+    onSuccess: () => {
+      refetch();
+      showToast({
+        type: "info",
+        title: "Pipeline iniciado",
+        message: "O processamento começou. Acompanhe o progresso abaixo.",
+      });
+    },
+    onError: (err: Error) => {
+      showToast({
+        type: "error",
+        title: "Erro ao iniciar pipeline",
+        message: err.message,
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -304,14 +345,18 @@ export default function ProjectPage() {
                 Ações
               </h3>
               <button
-                className="btn-primary w-full"
-                onClick={() => api.startPipeline(projectId).then(() => refetch())}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+                onClick={() => pipelineMutation.mutate()}
                 disabled={
+                  pipelineMutation.isPending ||
                   project.status === "synthesizing" ||
                   project.status === "refining" ||
                   project.status === "mixing"
                 }
               >
+                {pipelineMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 Iniciar Pipeline Completo
               </button>
             </div>
