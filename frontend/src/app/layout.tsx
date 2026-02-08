@@ -48,6 +48,12 @@ export default function RootLayout({
                     Projetos
                   </a>
                   <a
+                    href="/quick-start"
+                    className="text-sm text-brand-400 transition-colors hover:text-brand-300"
+                  >
+                    Quick Start
+                  </a>
+                  <a
                     href="/settings"
                     className="text-sm text-gray-400 transition-colors hover:text-white"
                   >

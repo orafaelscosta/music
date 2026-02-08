@@ -1,5 +1,7 @@
 """Testes para as rotas API."""
 
+from unittest.mock import patch, MagicMock
+
 import pytest
 
 
@@ -500,3 +502,99 @@ class TestDuplicateProject:
         """Duplicar projeto inexistente retorna 404."""
         response = await client.post("/api/projects/inexistente/duplicate")
         assert response.status_code == 404
+
+
+# ============================================================
+# Testes de Quick Start
+# ============================================================
+class TestQuickStartAPI:
+    """Testes para o endpoint quick-start."""
+
+    @pytest.mark.asyncio
+    @patch("workers.tasks.run_full_pipeline.delay", return_value=MagicMock())
+    async def test_quick_start_creates_project(self, mock_delay, client, sample_audio_path):
+        """Quick start cria projeto com instrumental, letra e inicia pipeline."""
+        with open(sample_audio_path, "rb") as f:
+            response = await client.post(
+                "/api/pipeline/quick-start",
+                files={"file": ("meu_instrumental.wav", f, "audio/wav")},
+                data={
+                    "lyrics": "La la la\nTra la la",
+                    "name": "Quick Test",
+                    "language": "it",
+                    "synthesis_engine": "diffsinger",
+                },
+            )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "Quick Test"
+        assert data["lyrics"] == "La la la\nTra la la"
+        assert data["language"] == "it"
+        assert data["synthesis_engine"] == "diffsinger"
+        assert data["instrumental_filename"] == "meu_instrumental.wav"
+        assert data["audio_format"] == "wav"
+        assert data["bpm"] is not None
+        assert data["sample_rate"] is not None
+        assert mock_delay.called
+
+    @pytest.mark.asyncio
+    @patch("workers.tasks.run_full_pipeline.delay", return_value=MagicMock())
+    async def test_quick_start_auto_name(self, mock_delay, client, sample_audio_path):
+        """Quick start usa nome do arquivo quando nome não é fornecido."""
+        with open(sample_audio_path, "rb") as f:
+            response = await client.post(
+                "/api/pipeline/quick-start",
+                files={"file": ("canzone_bella.wav", f, "audio/wav")},
+                data={"lyrics": "Do re mi"},
+            )
+        assert response.status_code == 201
+        assert response.json()["name"] == "canzone_bella"
+
+    @pytest.mark.asyncio
+    async def test_quick_start_without_lyrics(self, client, sample_audio_path):
+        """Quick start sem letra retorna erro 422."""
+        with open(sample_audio_path, "rb") as f:
+            response = await client.post(
+                "/api/pipeline/quick-start",
+                files={"file": ("test.wav", f, "audio/wav")},
+                data={},
+            )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_quick_start_without_file(self, client):
+        """Quick start sem arquivo retorna erro 422."""
+        response = await client.post(
+            "/api/pipeline/quick-start",
+            data={"lyrics": "Some lyrics"},
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_quick_start_invalid_format(self, client, tmp_project_dir):
+        """Quick start com formato inválido retorna erro 400."""
+        # Criar um arquivo .txt
+        fake_file = tmp_project_dir / "not_audio.txt"
+        fake_file.write_text("not an audio file")
+
+        with open(fake_file, "rb") as f:
+            response = await client.post(
+                "/api/pipeline/quick-start",
+                files={"file": ("not_audio.txt", f, "text/plain")},
+                data={"lyrics": "Some lyrics"},
+            )
+        assert response.status_code == 400
+        assert "Formato não suportado" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    @patch("workers.tasks.run_full_pipeline.delay", return_value=MagicMock())
+    async def test_quick_start_default_engine(self, mock_delay, client, sample_audio_path):
+        """Quick start sem engine usa diffsinger por padrão."""
+        with open(sample_audio_path, "rb") as f:
+            response = await client.post(
+                "/api/pipeline/quick-start",
+                files={"file": ("test.wav", f, "audio/wav")},
+                data={"lyrics": "La la la"},
+            )
+        assert response.status_code == 201
+        assert response.json()["synthesis_engine"] == "diffsinger"

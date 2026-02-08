@@ -458,6 +458,37 @@ class ApiClient {
     return this.request("/api/batch/status");
   }
 
+  // Quick Start
+  async quickStart(data: {
+    file: File;
+    lyrics: string;
+    name?: string;
+    language?: string;
+    synthesis_engine?: string;
+  }): Promise<Project> {
+    const formData = new FormData();
+    formData.append("file", data.file);
+    formData.append("lyrics", data.lyrics);
+    if (data.name) formData.append("name", data.name);
+    if (data.language) formData.append("language", data.language);
+    if (data.synthesis_engine) formData.append("synthesis_engine", data.synthesis_engine);
+
+    const url = `${this.baseUrl}/api/pipeline/quick-start`;
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        detail: "Erro no quick-start",
+      }));
+      throw new Error(error.detail);
+    }
+
+    return response.json();
+  }
+
   // Audio download URL
   getAudioUrl(projectId: string, filename: string): string {
     return `${this.baseUrl}/api/audio/${projectId}/${filename}`;

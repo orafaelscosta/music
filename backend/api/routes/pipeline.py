@@ -1,15 +1,18 @@
 """Rotas de controle do pipeline de processamento."""
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.schemas import ProjectResponse
+from config import settings
 from database import get_db
 from models.project import PipelineStep, Project, ProjectStatus
+from services.analyzer import AudioAnalyzer
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
+analyzer = AudioAnalyzer()
 
 
 @router.post("/{project_id}/start", response_model=ProjectResponse)
@@ -87,6 +90,105 @@ async def run_pipeline_step(
     await db.refresh(project)
 
     logger.info("pipeline_step_iniciado", project_id=project_id, step=step.value)
+    return project
+
+
+@router.post("/quick-start", response_model=ProjectResponse, status_code=201)
+async def quick_start(
+    file: UploadFile,
+    lyrics: str = Form(...),
+    name: str = Form(default=""),
+    language: str = Form(default="it"),
+    synthesis_engine: str = Form(default="diffsinger"),
+    db: AsyncSession = Depends(get_db),
+) -> Project:
+    """Cria projeto, faz upload, salva letra e inicia pipeline — tudo em um request."""
+    # Validar formato do áudio
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Arquivo sem nome")
+
+    extension = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if extension not in settings.allowed_audio_formats:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Formato não suportado. Use: {', '.join(settings.allowed_audio_formats)}",
+        )
+
+    # Validar tamanho
+    content = await file.read()
+    size_mb = len(content) / (1024 * 1024)
+    if size_mb > settings.max_upload_size_mb:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Arquivo muito grande ({size_mb:.1f}MB). Máximo: {settings.max_upload_size_mb}MB",
+        )
+
+    # Validar engine
+    if synthesis_engine not in ("diffsinger", "acestep"):
+        synthesis_engine = "diffsinger"
+
+    # Criar projeto
+    project_name = name.strip() or file.filename.rsplit(".", 1)[0]
+    project = Project(
+        name=project_name,
+        language=language,
+        lyrics=lyrics,
+        synthesis_engine=synthesis_engine,
+    )
+    db.add(project)
+    await db.commit()
+    await db.refresh(project)
+
+    # Salvar instrumental
+    project_dir = settings.projects_path / project.id
+    project_dir.mkdir(parents=True, exist_ok=True)
+    file_path = project_dir / f"instrumental.{extension}"
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    project.instrumental_filename = file.filename
+    project.audio_format = extension
+
+    logger.info(
+        "quick_start_upload",
+        project_id=project.id,
+        filename=file.filename,
+        size_mb=round(size_mb, 2),
+    )
+
+    # Executar análise síncrona
+    try:
+        analysis = await analyzer.analyze(file_path)
+    except Exception as e:
+        project.status = ProjectStatus.ERROR
+        project.error_message = f"Erro na análise: {str(e)}"
+        await db.commit()
+        raise HTTPException(status_code=500, detail=f"Erro na análise de áudio: {str(e)}")
+
+    project.duration_seconds = analysis.duration_seconds
+    project.sample_rate = analysis.sample_rate
+    project.bpm = analysis.bpm
+    project.musical_key = analysis.musical_key
+
+    # Disparar pipeline completo via Celery
+    from workers.tasks import run_full_pipeline
+
+    run_full_pipeline.delay(project.id)
+
+    project.status = ProjectStatus.ANALYZING
+    project.current_step = PipelineStep.ANALYSIS
+    project.progress = 0
+    await db.commit()
+    await db.refresh(project)
+
+    logger.info(
+        "quick_start_concluido",
+        project_id=project.id,
+        name=project.name,
+        lyrics_len=len(lyrics),
+        engine=synthesis_engine,
+    )
     return project
 
 
