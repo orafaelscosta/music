@@ -3,6 +3,8 @@
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.routes import audio, batch, melody, mix, pipeline, projects, refinement, synthesis, templates, voices
 from api.websocket import websocket_endpoint
@@ -71,3 +73,13 @@ async def startup() -> None:
 async def health_check() -> dict:
     """Endpoint de health check."""
     return {"status": "ok", "version": "0.1.0"}
+
+
+@app.get("/download/{filename}")
+async def download_file(filename: str) -> FileResponse:
+    """Download de arquivos do storage."""
+    file_path = settings.storage_path / filename
+    if not file_path.exists():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+    return FileResponse(path=file_path, filename=filename)
