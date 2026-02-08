@@ -197,7 +197,33 @@ class PipelineOrchestrator:
         logger.info("refinement_concluido", project_id=project.id)
 
     async def _run_mix(self, project: Project, db: AsyncSession) -> None:
-        """Mixagem final — placeholder para Fase 5."""
-        logger.info("mix_placeholder", project_id=project.id)
+        """Mixagem final com Pedalboard."""
+        from config import settings
+        from services.mixer import MixConfig, MixerService
+
         project.status = ProjectStatus.MIXING
-        # Será implementado na Fase 5 com Pedalboard
+        project_dir = settings.projects_path / project.id
+
+        # Determinar vocal (refinado ou raw)
+        vocal_path = project_dir / "vocals_refined.wav"
+        if not vocal_path.exists():
+            vocal_path = project_dir / "vocals_raw.wav"
+        if not vocal_path.exists():
+            logger.warning("mix_bypass_sem_vocal", project_id=project.id)
+            return
+
+        # Determinar instrumental
+        instrumental_path = None
+        if project.audio_format:
+            instrumental_path = project_dir / f"instrumental.{project.audio_format}"
+        if not instrumental_path or not instrumental_path.exists():
+            logger.warning("mix_bypass_sem_instrumental", project_id=project.id)
+            return
+
+        output_path = project_dir / "mix_final.wav"
+
+        svc = MixerService()
+        config = MixConfig()  # Preset balanced (padrão)
+        await svc.mix(vocal_path, instrumental_path, output_path, config)
+
+        logger.info("mix_concluido", project_id=project.id)

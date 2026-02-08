@@ -355,6 +355,56 @@ class ApiClient {
     return this.request(`/api/refinement/${projectId}/models`);
   }
 
+  // Mix
+  async renderMix(
+    projectId: string,
+    params: {
+      vocal_gain_db: number;
+      instrumental_gain_db: number;
+      eq_low_gain_db: number;
+      eq_mid_gain_db: number;
+      eq_high_gain_db: number;
+      compressor_threshold_db: number;
+      compressor_ratio: number;
+      reverb_room_size: number;
+      reverb_wet_level: number;
+      limiter_threshold_db: number;
+      preset: string | null;
+    }
+  ): Promise<{ status: string; output_file: string; download_url: string; preset: string | null }> {
+    return this.request(`/api/mix/${projectId}/render`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async exportMix(
+    projectId: string,
+    format: string = "wav"
+  ): Promise<{ status: string; format: string; output_file: string; download_url: string }> {
+    return this.request(`/api/mix/${projectId}/export`, {
+      method: "POST",
+      body: JSON.stringify({ format }),
+    });
+  }
+
+  async getMixStatus(
+    projectId: string
+  ): Promise<{
+    has_vocal: boolean;
+    has_instrumental: boolean;
+    has_mix: boolean;
+    exports: { file: string; format: string; download_url: string }[];
+  }> {
+    return this.request(`/api/mix/${projectId}/status`);
+  }
+
+  async getMixPresets(
+    projectId: string
+  ): Promise<{ presets: { name: string; params: Record<string, number> }[] }> {
+    return this.request(`/api/mix/${projectId}/presets`);
+  }
+
   // Audio download URL
   getAudioUrl(projectId: string, filename: string): string {
     return `${this.baseUrl}/api/audio/${projectId}/${filename}`;

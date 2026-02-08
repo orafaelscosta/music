@@ -12,11 +12,14 @@ import UploadZone from "@/components/UploadZone";
 import LyricsEditor from "@/components/LyricsEditor";
 import {
   Music,
+  Music2,
   FileAudio,
   Activity,
   Settings,
   Loader2,
+  Mic,
   PenTool,
+  Sliders,
 } from "lucide-react";
 
 const PIPELINE_STEPS = [
@@ -201,6 +204,45 @@ export default function ProjectPage() {
                 <Music className="h-4 w-4" />
                 Abrir Editor de Melodia
               </a>
+            </div>
+          )}
+
+          {/* Workflow Navigation */}
+          {project.instrumental_filename && project.bpm && (
+            <div className="card">
+              <h2 className="mb-4 text-lg font-semibold text-white">
+                Pipeline de Produção
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <a
+                  href={`/project/${projectId}/melody`}
+                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
+                >
+                  <PenTool className="h-4 w-4" />
+                  Melodia
+                </a>
+                <a
+                  href={`/project/${projectId}/synthesis`}
+                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
+                >
+                  <Mic className="h-4 w-4" />
+                  Síntese
+                </a>
+                <a
+                  href={`/project/${projectId}/refinement`}
+                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
+                >
+                  <Sliders className="h-4 w-4" />
+                  Refinamento
+                </a>
+                <a
+                  href={`/project/${projectId}/mix`}
+                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
+                >
+                  <Music2 className="h-4 w-4" />
+                  Mixagem
+                </a>
+              </div>
             </div>
           )}
 
