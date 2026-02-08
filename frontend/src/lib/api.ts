@@ -465,6 +465,18 @@ class ApiClient {
     name?: string;
     language?: string;
     synthesis_engine?: string;
+    vocal_style?: string;
+    breathiness?: number;
+    tension?: number;
+    energy?: number;
+    vibrato?: number;
+    pitch_range?: number;
+    gender?: number;
+    mix_preset?: string;
+    vocal_gain_db?: number;
+    instrumental_gain_db?: number;
+    reverb_amount?: number;
+    compression_amount?: number;
   }): Promise<Project> {
     const formData = new FormData();
     formData.append("file", data.file);
@@ -472,6 +484,18 @@ class ApiClient {
     if (data.name) formData.append("name", data.name);
     if (data.language) formData.append("language", data.language);
     if (data.synthesis_engine) formData.append("synthesis_engine", data.synthesis_engine);
+    if (data.vocal_style) formData.append("vocal_style", data.vocal_style);
+    if (data.breathiness !== undefined) formData.append("breathiness", String(data.breathiness));
+    if (data.tension !== undefined) formData.append("tension", String(data.tension));
+    if (data.energy !== undefined) formData.append("energy", String(data.energy));
+    if (data.vibrato !== undefined) formData.append("vibrato", String(data.vibrato));
+    if (data.pitch_range !== undefined) formData.append("pitch_range", String(data.pitch_range));
+    if (data.gender !== undefined) formData.append("gender", String(data.gender));
+    if (data.mix_preset) formData.append("mix_preset", data.mix_preset);
+    if (data.vocal_gain_db !== undefined) formData.append("vocal_gain_db", String(data.vocal_gain_db));
+    if (data.instrumental_gain_db !== undefined) formData.append("instrumental_gain_db", String(data.instrumental_gain_db));
+    if (data.reverb_amount !== undefined) formData.append("reverb_amount", String(data.reverb_amount));
+    if (data.compression_amount !== undefined) formData.append("compression_amount", String(data.compression_amount));
 
     const url = `${this.baseUrl}/api/pipeline/quick-start`;
     const response = await fetch(url, {
