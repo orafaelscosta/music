@@ -12,6 +12,8 @@ import {
   Copy,
   ArrowRight,
   Loader2,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 
 interface ProjectTemplate {
@@ -80,40 +82,50 @@ export default function DashboardPage() {
   const statusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "text-green-400 bg-green-400/10";
+        return "text-emerald-400 bg-emerald-400/10 border border-emerald-500/20";
       case "error":
-        return "text-red-400 bg-red-400/10";
+        return "text-red-400 bg-red-400/10 border border-red-500/20";
       case "created":
-        return "text-gray-400 bg-gray-400/10";
+        return "text-gray-400 bg-gray-400/10 border border-gray-500/20";
       default:
-        return "text-brand-400 bg-brand-400/10";
+        return "text-brand-400 bg-brand-400/10 border border-brand-500/20";
     }
   };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      {/* Header with gradient accent */}
+      <div className="mb-10 flex items-end justify-between animate-slide-down">
         <div>
-          <h1 className="text-3xl font-bold text-white">Projetos</h1>
-          <p className="mt-1 text-gray-400">
-            Gerencie seus projetos de vocal por IA
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Seus Projetos
+          </h1>
+          <p className="mt-1.5 text-sm text-gray-500">
+            {data?.projects.length
+              ? `${data.projects.length} projeto${data.projects.length > 1 ? "s" : ""}`
+              : "Crie seu primeiro projeto para gerar vocais com IA"}
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Novo Projeto
-        </button>
+        <div className="flex gap-3">
+          <a href="/quick-start" className="btn-secondary flex items-center gap-2">
+            <Zap className="h-4 w-4 text-brand-400" />
+            Quick Start
+          </a>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Projeto
+          </button>
+        </div>
       </div>
 
       {/* Create Project Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="card w-full max-w-md">
-            <h2 className="mb-4 text-xl font-bold text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in">
+          <div className="card w-full max-w-md animate-scale-in">
+            <h2 className="mb-5 text-xl font-bold tracking-tight text-white">
               Novo Projeto
             </h2>
             <form
@@ -126,7 +138,7 @@ export default function DashboardPage() {
                 {/* Template selector */}
                 {templatesData?.templates && templatesData.templates.length > 0 && (
                   <div>
-                    <label className="mb-2 block text-sm text-gray-400">
+                    <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-500">
                       Template (opcional)
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -143,10 +155,10 @@ export default function DashboardPage() {
                               if (!newName) setNewName(t.name);
                             }
                           }}
-                          className={`rounded-lg border p-2 text-left text-xs transition-colors ${
+                          className={`rounded-lg border p-2.5 text-left text-xs transition-all duration-200 ${
                             selectedTemplate === t.id
-                              ? "border-brand-500 bg-brand-500/10 text-brand-400"
-                              : "border-gray-700 text-gray-400 hover:border-gray-600"
+                              ? "border-brand-500/50 bg-brand-500/10 text-brand-400 shadow-sm shadow-brand-500/10"
+                              : "border-gray-700/50 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50"
                           }`}
                         >
                           <span className="font-medium">{t.name}</span>
@@ -158,7 +170,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div>
-                  <label className="mb-1 block text-sm text-gray-400">
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     Nome do projeto
                   </label>
                   <input
@@ -172,7 +184,7 @@ export default function DashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-gray-400">
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     Descrição (opcional)
                   </label>
                   <textarea
@@ -183,7 +195,7 @@ export default function DashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-gray-400">
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     Idioma principal
                   </label>
                   <select
@@ -231,104 +243,129 @@ export default function DashboardPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
         </div>
       ) : data?.projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Music className="mb-4 h-16 w-16 text-gray-600" />
-          <h2 className="mb-2 text-xl font-semibold text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+          <div className="relative mb-6">
+            <div className="absolute -inset-4 rounded-full bg-brand-500/10 animate-glow-pulse" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900/80">
+              <Sparkles className="h-10 w-10 text-gray-600" />
+            </div>
+          </div>
+          <h2 className="mb-2 text-xl font-semibold tracking-tight text-gray-300">
             Nenhum projeto ainda
           </h2>
-          <p className="mb-6 text-gray-500">
-            Crie seu primeiro projeto para começar a gerar vocais
+          <p className="mb-8 max-w-sm text-center text-sm text-gray-500">
+            Crie um projeto manualmente ou use o Quick Start para gerar vocais em um clique
           </p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Criar Projeto
-          </button>
+          <div className="flex gap-3">
+            <a href="/quick-start" className="btn-secondary flex items-center gap-2">
+              <Zap className="h-4 w-4 text-brand-400" />
+              Quick Start
+            </a>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Criar Projeto
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data?.projects.map((project: Project) => (
-            <div key={project.id} className="card group relative">
-              <div className="mb-3 flex items-start justify-between">
-                <h3 className="text-lg font-semibold text-white">
-                  {project.name}
-                </h3>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor(
-                    project.status
-                  )}`}
-                >
-                  {STATUS_LABELS[project.status] || project.status}
-                </span>
-              </div>
-
-              {project.description && (
-                <p className="mb-3 text-sm text-gray-400 line-clamp-2">
-                  {project.description}
-                </p>
+          {data?.projects.map((project: Project, index: number) => (
+            <div
+              key={project.id}
+              className={`card-hover group relative animate-slide-up stagger-${Math.min(index + 1, 8)}`}
+            >
+              {/* Subtle glow on active projects */}
+              {project.status !== "created" && project.status !== "completed" && project.status !== "error" && (
+                <div className="absolute -inset-px rounded-xl bg-gradient-to-r from-brand-500/20 to-purple-500/20 opacity-0 transition-opacity group-hover:opacity-100" />
               )}
 
-              <div className="mb-4 flex flex-wrap gap-3 text-xs text-gray-500">
-                {project.bpm && (
-                  <span className="flex items-center gap-1">
-                    <Music className="h-3 w-3" />
-                    {project.bpm} BPM
-                  </span>
-                )}
-                {project.musical_key && (
-                  <span>{project.musical_key}</span>
-                )}
-                {project.duration_seconds && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDuration(project.duration_seconds)}
-                  </span>
-                )}
-                {project.language && (
-                  <span className="uppercase">{project.language}</span>
-                )}
-              </div>
-
-              {/* Progress bar */}
-              {project.status !== "created" &&
-                project.status !== "completed" &&
-                project.status !== "error" && (
-                  <div className="mb-4">
-                    <div className="h-1.5 w-full rounded-full bg-gray-800">
-                      <div
-                        className="h-full rounded-full bg-brand-500 transition-all"
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => duplicateMutation.mutate(project.id)}
-                    className="text-gray-600 opacity-0 transition-opacity hover:text-brand-400 group-hover:opacity-100"
-                    title="Duplicar projeto"
+              <div className="relative">
+                <div className="mb-3 flex items-start justify-between">
+                  <h3 className="text-base font-semibold tracking-tight text-white group-hover:text-brand-100 transition-colors">
+                    {project.name}
+                  </h3>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(
+                      project.status
+                    )}`}
                   >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => deleteMutation.mutate(project.id)}
-                    className="text-gray-600 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
-                    title="Excluir projeto"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    {STATUS_LABELS[project.status] || project.status}
+                  </span>
                 </div>
-                <a
-                  href={`/project/${project.id}`}
-                  className="flex items-center gap-1 text-sm text-brand-400 transition-colors hover:text-brand-300"
-                >
-                  Abrir
-                  <ArrowRight className="h-4 w-4" />
-                </a>
+
+                {project.description && (
+                  <p className="mb-3 text-xs text-gray-500 line-clamp-2">
+                    {project.description}
+                  </p>
+                )}
+
+                <div className="mb-4 flex flex-wrap gap-3 text-xs text-gray-500">
+                  {project.bpm && (
+                    <span className="flex items-center gap-1">
+                      <Music className="h-3 w-3" />
+                      {project.bpm} BPM
+                    </span>
+                  )}
+                  {project.musical_key && (
+                    <span className="rounded bg-gray-800/60 px-1.5 py-0.5 text-[10px] font-medium">
+                      {project.musical_key}
+                    </span>
+                  )}
+                  {project.duration_seconds && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDuration(project.duration_seconds)}
+                    </span>
+                  )}
+                  {project.language && (
+                    <span className="rounded bg-gray-800/60 px-1.5 py-0.5 text-[10px] font-medium uppercase">
+                      {project.language}
+                    </span>
+                  )}
+                </div>
+
+                {/* Progress bar */}
+                {project.status !== "created" &&
+                  project.status !== "completed" &&
+                  project.status !== "error" && (
+                    <div className="mb-4">
+                      <div className="h-1 w-full rounded-full bg-gray-800/80">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-brand-500 to-purple-500 transition-all duration-500"
+                          style={{ width: `${project.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => duplicateMutation.mutate(project.id)}
+                      className="rounded-md p-1.5 text-gray-600 opacity-0 transition-all hover:bg-white/[0.05] hover:text-brand-400 group-hover:opacity-100"
+                      title="Duplicar projeto"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => deleteMutation.mutate(project.id)}
+                      className="rounded-md p-1.5 text-gray-600 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
+                      title="Excluir projeto"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <a
+                    href={`/project/${project.id}`}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-400 transition-all hover:bg-brand-500/10 hover:text-brand-300"
+                  >
+                    Abrir
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </a>
+                </div>
               </div>
             </div>
           ))}

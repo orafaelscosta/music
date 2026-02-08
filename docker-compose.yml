@@ -26,7 +26,7 @@ services:
       - ./storage:/app/storage
       - ./engines:/app/engines
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./storage/vocal_studio.db
+      - DATABASE_URL=sqlite+aiosqlite:///./storage/clovisai.db
       - REDIS_URL=redis://redis:6379/0
       - STORAGE_PATH=./storage
     depends_on:
@@ -50,7 +50,7 @@ services:
       - ./storage:/app/storage
       - ./engines:/app/engines
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./storage/vocal_studio.db
+      - DATABASE_URL=sqlite+aiosqlite:///./storage/clovisai.db
       - REDIS_URL=redis://redis:6379/0
       - STORAGE_PATH=./storage
     depends_on:

@@ -1,4 +1,4 @@
-"""Configurações centrais do AI Vocal Studio."""
+"""Configurações centrais do ClovisAI."""
 
 from pathlib import Path
 
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     backend_port: int = 8000
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./storage/vocal_studio.db"
+    database_url: str = "sqlite+aiosqlite:///./storage/clovisai.db"
 
     # Storage
     storage_path: Path = Path("./storage")

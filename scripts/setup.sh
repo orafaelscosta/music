@@ -1,9 +1,9 @@
 #!/bin/bash
-# AI Vocal Studio — Script de instalação completa
+# ClovisAI — Script de instalação completa
 set -e
 
 echo "=========================================="
-echo "  AI Vocal Studio — Setup"
+echo "  ClovisAI — Setup"
 echo "=========================================="
 
 # Diretório raiz do projeto

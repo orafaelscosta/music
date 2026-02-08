@@ -24,7 +24,7 @@ def check(name: str, check_fn) -> bool:
 def main():
     print()
     print("\033[1m" + "=" * 55)
-    print("  AI Vocal Studio — Verificação de Ambiente")
+    print("  ClovisAI — Verificação de Ambiente")
     print("=" * 55 + "\033[0m")
     print()
 

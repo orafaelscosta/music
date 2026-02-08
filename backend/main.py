@@ -1,4 +1,4 @@
-"""AI Vocal Studio — Entry point da aplicação FastAPI."""
+"""ClovisAI — Entry point da aplicação FastAPI."""
 
 import structlog
 from fastapi import FastAPI
@@ -23,8 +23,8 @@ structlog.configure(
 logger = structlog.get_logger()
 
 app = FastAPI(
-    title="AI Vocal Studio",
-    description="Sistema orquestrador para geração de vocais por IA",
+    title="ClovisAI - Music Creation",
+    description="Sistema de criação musical com IA",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",

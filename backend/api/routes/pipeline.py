@@ -107,6 +107,20 @@ async def quick_start(
     name: str = Form(default=""),
     language: str = Form(default="it"),
     synthesis_engine: str = Form(default="diffsinger"),
+    # Vocal params
+    vocal_style: str = Form(default="pop"),
+    breathiness: float = Form(default=30),
+    tension: float = Form(default=45),
+    energy: float = Form(default=65),
+    vibrato: float = Form(default=40),
+    pitch_range: float = Form(default=60),
+    gender: float = Form(default=50),
+    # Mix params
+    mix_preset: str = Form(default="balanced"),
+    vocal_gain_db: float = Form(default=0),
+    instrumental_gain_db: float = Form(default=-3),
+    reverb_amount: float = Form(default=25),
+    compression_amount: float = Form(default=40),
     db: AsyncSession = Depends(get_db),
 ) -> Project:
     """Cria projeto, faz upload, salva letra e inicia pipeline — tudo em um request."""
@@ -134,10 +148,28 @@ async def quick_start(
     if synthesis_engine not in ("diffsinger", "acestep"):
         synthesis_engine = "diffsinger"
 
-    # Criar projeto
+    # Criar projeto com parâmetros vocais e de mix
+    import json
+
     project_name = name.strip() or file.filename.rsplit(".", 1)[0]
+    vocal_config = json.dumps({
+        "vocal_style": vocal_style,
+        "breathiness": breathiness,
+        "tension": tension,
+        "energy": energy,
+        "vibrato": vibrato,
+        "pitch_range": pitch_range,
+        "gender": gender,
+        "mix_preset": mix_preset,
+        "vocal_gain_db": vocal_gain_db,
+        "instrumental_gain_db": instrumental_gain_db,
+        "reverb_amount": reverb_amount,
+        "compression_amount": compression_amount,
+    })
+
     project = Project(
         name=project_name,
+        description=vocal_config,
         language=language,
         lyrics=lyrics,
         synthesis_engine=synthesis_engine,
@@ -146,9 +178,12 @@ async def quick_start(
     await db.commit()
     await db.refresh(project)
 
-    # Salvar instrumental
+    # Salvar config vocal como arquivo JSON para o pipeline
     project_dir = settings.projects_path / project.id
     project_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(project_dir / "vocal_config.json", "w") as vc:
+        vc.write(vocal_config)
     file_path = project_dir / f"instrumental.{extension}"
 
     with open(file_path, "wb") as f:

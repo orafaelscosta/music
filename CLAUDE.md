@@ -1,7 +1,7 @@
-# AI Vocal Studio — Claude Code Instructions
+# ClovisAI — Claude Code Instructions
 
 ## Projeto
-Sistema web para geração de vocais por IA sobre instrumentais existentes.
+Sistema web de criação musical com IA — geração de vocais sobre instrumentais existentes.
 Stack: Next.js 14 + FastAPI + Python AI engines.
 
 ## Regras de Código

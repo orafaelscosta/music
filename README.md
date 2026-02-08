@@ -1,6 +1,6 @@
-# AI Vocal Studio
+# ClovisAI - Music Creation
 
-Sistema web para geração de vocais por IA sobre instrumentais existentes. Faça upload de um instrumental, insira a letra e o pipeline gera automaticamente a voz cantada, refina o timbre e entrega a mixagem final.
+Sistema web de criação musical com IA. Faça upload de um instrumental, insira a letra e o pipeline gera automaticamente a voz cantada, refina o timbre e entrega a mixagem final.
 
 ## Stack
 
@@ -29,7 +29,7 @@ Sistema web para geração de vocais por IA sobre instrumentais existentes. Faç
 ## Estrutura do Projeto
 
 ```
-ai-vocal-studio/
+clovisai/
 ├── backend/
 │   ├── api/
 │   │   ├── routes/          # Endpoints (projects, audio, pipeline, melody, synthesis, refinement, mix, voices, templates, batch)
