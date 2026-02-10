@@ -32,6 +32,14 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}-backend:latest
 
+      - name: Make backend package public
+        run: |
+          curl -s -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$(echo '${{ github.event.repository.name }}-backend' | sed 's/\//%2F/g')" \
+            -d '{"visibility":"public"}' || true
+
   build-frontend:
     runs-on: ubuntu-latest
     permissions:
@@ -56,3 +64,11 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ github.repository }}-frontend:latest
           build-args: |
             NEXT_PUBLIC_WS_URL=ws://103.199.186.34:8091
+
+      - name: Make frontend package public
+        run: |
+          curl -s -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$(echo '${{ github.event.repository.name }}-frontend' | sed 's/\//%2F/g')" \
+            -d '{"visibility":"public"}' || true
