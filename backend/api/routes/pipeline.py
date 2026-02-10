@@ -107,7 +107,9 @@ async def quick_start(
     name: str = Form(default=""),
     language: str = Form(default="it"),
     synthesis_engine: str = Form(default="diffsinger"),
+    has_vocals: bool = Form(default=False),
     # Vocal params
+    voice_preset: str = Form(default=""),
     vocal_style: str = Form(default="pop"),
     breathiness: float = Form(default=30),
     tension: float = Form(default=45),
@@ -152,7 +154,21 @@ async def quick_start(
     import json
 
     project_name = name.strip() or file.filename.rsplit(".", 1)[0]
+    # Se voice_preset foi selecionado, buscar parâmetros do preset
+    if voice_preset:
+        from api.routes.voices import VOICE_PRESETS
+        preset = next((p for p in VOICE_PRESETS if p["id"] == voice_preset), None)
+        if preset:
+            preset_params = preset["params"]
+            breathiness = preset_params.get("breathiness", breathiness)
+            tension = preset_params.get("tension", tension)
+            energy = preset_params.get("energy", energy)
+            vibrato = preset_params.get("vibrato", vibrato)
+            pitch_range = preset_params.get("pitch_range", pitch_range)
+            gender = preset_params.get("gender", gender)
+
     vocal_config = json.dumps({
+        "voice_preset": voice_preset,
         "vocal_style": vocal_style,
         "breathiness": breathiness,
         "tension": tension,
@@ -167,12 +183,29 @@ async def quick_start(
         "compression_amount": compression_amount,
     })
 
+    # Descrição legível para exibição na UI
+    style_labels = {
+        "operatic": "Operístico", "pop": "Pop", "breathy": "Aéreo",
+        "powerful": "Potente", "ethereal": "Etéreo", "custom": "Personalizado",
+    }
+    mix_labels = {
+        "balanced": "Equilibrado", "vocal_forward": "Vocal em Destaque",
+        "ambient": "Ambiente", "radio": "Radio Ready", "dry": "Seco",
+    }
+    engine_labels = {"diffsinger": "DiffSinger", "acestep": "ACE-Step"}
+    description = (
+        f"Vocal {style_labels.get(vocal_style, vocal_style)} · "
+        f"Mix {mix_labels.get(mix_preset, mix_preset)} · "
+        f"{engine_labels.get(synthesis_engine, synthesis_engine)}"
+    )
+
     project = Project(
         name=project_name,
-        description=vocal_config,
+        description=description,
         language=language,
         lyrics=lyrics,
         synthesis_engine=synthesis_engine,
+        has_vocals=has_vocals,
     )
     db.add(project)
     await db.commit()
@@ -254,8 +287,8 @@ async def get_pipeline_status(
     project_dir = settings.projects_path / project_id
     files_exist = {}
     for filename in [
-        "instrumental", "melody.mid", "melody.json", "vocals_raw.wav",
-        "vocals_refined.wav", "mix_final.wav",
+        "instrumental", "vocals.wav", "melody.mid", "melody.json",
+        "vocals_raw.wav", "vocals_refined.wav", "mix_final.wav",
     ]:
         if filename == "instrumental":
             files_exist[filename] = bool(
@@ -276,6 +309,10 @@ async def get_pipeline_status(
             "upload": {
                 "completed": files_exist.get("instrumental", False),
                 "available": True,
+            },
+            "separation": {
+                "completed": files_exist.get("vocals.wav", False),
+                "available": files_exist.get("instrumental", False) and project.has_vocals,
             },
             "analysis": {
                 "completed": project.bpm is not None,

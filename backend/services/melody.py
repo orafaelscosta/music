@@ -131,13 +131,17 @@ class MelodyService:
         """Extração síncrona de melodia usando librosa pyin."""
         logger.info("melody_extraction_iniciada", file=str(audio_path))
 
-        y, sr = librosa.load(str(audio_path), sr=22050)
+        y, sr = librosa.load(str(audio_path), sr=22050, mono=True)
 
-        # Usar pyin para detecção de pitch (mais robusto que piptrack)
+        # Range vocal humano: C3 (130Hz) a C6 (1047Hz)
+        # Evita capturar baixo/guitarra (abaixo de C3) e harmônicos (acima de C6)
+        fmin = librosa.note_to_hz("C3")   # ~130 Hz
+        fmax = librosa.note_to_hz("C6")   # ~1047 Hz
+
         f0, voiced_flag, voiced_probs = librosa.pyin(
             y,
-            fmin=librosa.note_to_hz("C2"),
-            fmax=librosa.note_to_hz("C7"),
+            fmin=fmin,
+            fmax=fmax,
             sr=sr,
         )
 
@@ -149,18 +153,38 @@ class MelodyService:
         current_note: int | None = None
         note_start: float = 0.0
 
-        for i, (freq, is_voiced) in enumerate(zip(f0, voiced_flag)):
+        # MIDI range vocal: 48 (C3) a 84 (C6)
+        MIDI_MIN = 48
+        MIDI_MAX = 84
+
+        for i, (freq, is_voiced, prob) in enumerate(
+            zip(f0, voiced_flag, voiced_probs)
+        ):
             time = times[i]
 
-            if is_voiced and not np.isnan(freq) and freq > 0:
+            if (
+                is_voiced
+                and not np.isnan(freq)
+                and freq > 0
+                and prob > 0.3  # Exigir confiança mínima
+            ):
                 midi_note = int(round(librosa.hz_to_midi(freq)))
-                midi_note = max(24, min(96, midi_note))  # Limitar range vocal
+
+                # Rejeitar notas fora do range vocal
+                if midi_note < MIDI_MIN or midi_note > MIDI_MAX:
+                    if current_note is not None:
+                        notes.append(MelodyNote(
+                            start_time=note_start,
+                            end_time=time,
+                            midi_note=current_note,
+                        ))
+                        current_note = None
+                    continue
 
                 if current_note is None:
                     current_note = midi_note
                     note_start = time
                 elif midi_note != current_note:
-                    # Nova nota — salvar a anterior
                     notes.append(MelodyNote(
                         start_time=note_start,
                         end_time=time,
@@ -185,11 +209,14 @@ class MelodyService:
                 midi_note=current_note,
             ))
 
-        # Filtrar notas muito curtas (< 50ms)
-        notes = [n for n in notes if n.duration >= 0.05]
+        # Filtrar notas muito curtas (< 100ms)
+        notes = [n for n in notes if n.duration >= 0.1]
 
-        # Agrupar notas próximas com mesmo pitch
-        notes = self._merge_close_notes(notes, gap_threshold=0.05)
+        # Agrupar notas próximas com mesmo pitch (gap até 150ms)
+        notes = self._merge_close_notes(notes, gap_threshold=0.15)
+
+        # Remover outliers: notas que pulam > 12 semitons (1 oitava) das vizinhas
+        notes = self._remove_pitch_outliers(notes, max_jump=12)
 
         melody = MelodyData(notes=notes, bpm=bpm)
 
@@ -197,6 +224,7 @@ class MelodyService:
             "melody_extraction_concluida",
             total_notes=len(notes),
             bpm=bpm,
+            midi_range=f"{min(n.midi_note for n in notes)}-{max(n.midi_note for n in notes)}" if notes else "empty",
         )
         return melody
 
@@ -216,6 +244,32 @@ class MelodyService:
             else:
                 merged.append(note)
         return merged
+
+    def _remove_pitch_outliers(
+        self, notes: list[MelodyNote], max_jump: int = 12
+    ) -> list[MelodyNote]:
+        """Remove notas que saltam mais de max_jump semitons das vizinhas.
+
+        Uma nota é outlier se difere > max_jump tanto da anterior quanto da próxima.
+        """
+        if len(notes) <= 2:
+            return notes
+
+        filtered: list[MelodyNote] = [notes[0]]
+        for i in range(1, len(notes) - 1):
+            prev_midi = notes[i - 1].midi_note
+            curr_midi = notes[i].midi_note
+            next_midi = notes[i + 1].midi_note
+
+            jump_prev = abs(curr_midi - prev_midi)
+            jump_next = abs(curr_midi - next_midi)
+
+            if jump_prev > max_jump and jump_next > max_jump:
+                continue  # Outlier — descartar
+            filtered.append(notes[i])
+
+        filtered.append(notes[-1])
+        return filtered
 
     async def import_midi(self, midi_path: Path, bpm: float = 120.0) -> MelodyData:
         """Importa melodia de um arquivo MIDI externo."""

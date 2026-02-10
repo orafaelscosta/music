@@ -2,19 +2,20 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Dependências do sistema para librosa e processamento de áudio
+# Deps de sistema para soundfile
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.prod.txt ./
+RUN pip install --no-cache-dir -r requirements.prod.txt
 
 COPY . .
 
 # Criar diretórios necessários
-RUN mkdir -p /app/storage/projects
+RUN mkdir -p storage/projects
+
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 

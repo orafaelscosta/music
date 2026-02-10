@@ -16,6 +16,14 @@ interface Voice {
   path: string;
 }
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  portuguese: "Multilíngue (PT/IT/ES)",
+  italian: "Italiano",
+  english: "Inglês",
+  japanese: "Japonês",
+  spanish: "Espanhol",
+};
+
 export default function VoiceSelector({
   engine,
   selectedVoice,
@@ -64,8 +72,8 @@ export default function VoiceSelector({
           <div>
             <p className="text-sm font-medium text-gray-200">{voice.name}</p>
             {voice.language && (
-              <p className="text-xs uppercase text-gray-500">
-                {voice.language}
+              <p className="text-xs text-gray-500">
+                {LANGUAGE_LABELS[voice.language] || voice.language}
               </p>
             )}
           </div>

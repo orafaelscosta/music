@@ -14,6 +14,7 @@ class ProjectCreate(BaseModel):
     description: str | None = None
     language: str = Field(default="it", pattern="^(it|pt|en|es|fr|de|ja)$")
     synthesis_engine: str | None = Field(None, pattern="^(diffsinger|acestep)$")
+    has_vocals: bool = False
     template_id: str | None = None
 
 
@@ -46,6 +47,7 @@ class ProjectResponse(BaseModel):
 
     lyrics: str | None
     language: str | None
+    has_vocals: bool
     synthesis_engine: str | None
     voice_model: str | None
     progress: int

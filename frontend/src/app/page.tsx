@@ -82,13 +82,13 @@ export default function DashboardPage() {
   const statusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "text-emerald-400 bg-emerald-400/10 border border-emerald-500/20";
+        return "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20";
       case "error":
-        return "text-red-400 bg-red-400/10 border border-red-500/20";
+        return "text-red-400 bg-red-500/10 border border-red-500/20";
       case "created":
-        return "text-gray-400 bg-gray-400/10 border border-gray-500/20";
+        return "text-gray-400 bg-gray-500/10 border border-gray-500/20";
       default:
-        return "text-brand-400 bg-brand-400/10 border border-brand-500/20";
+        return "text-brand-400 bg-brand-500/10 border border-brand-500/20";
     }
   };
 
@@ -279,7 +279,7 @@ export default function DashboardPage() {
             >
               {/* Subtle glow on active projects */}
               {project.status !== "created" && project.status !== "completed" && project.status !== "error" && (
-                <div className="absolute -inset-px rounded-xl bg-gradient-to-r from-brand-500/20 to-purple-500/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute -inset-px rounded-xl bg-gradient-to-r from-brand-500/20 to-accent-500/20 opacity-0 transition-opacity group-hover:opacity-100" />
               )}
 
               <div className="relative">
@@ -334,7 +334,7 @@ export default function DashboardPage() {
                     <div className="mb-4">
                       <div className="h-1 w-full rounded-full bg-gray-800/80">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-brand-500 to-purple-500 transition-all duration-500"
+                          className="h-full rounded-full bg-gradient-to-r from-brand-500 to-accent-500 transition-all duration-500"
                           style={{ width: `${project.progress}%` }}
                         />
                       </div>

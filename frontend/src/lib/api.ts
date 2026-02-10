@@ -2,7 +2,7 @@
  * Cliente API para comunicação com o backend FastAPI.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export interface Project {
   id: string;
@@ -18,6 +18,7 @@ export interface Project {
   musical_key: string | null;
   lyrics: string | null;
   language: string | null;
+  has_vocals: boolean;
   synthesis_engine: string | null;
   voice_model: string | null;
   progress: number;
@@ -465,6 +466,8 @@ class ApiClient {
     name?: string;
     language?: string;
     synthesis_engine?: string;
+    has_vocals?: boolean;
+    voice_preset?: string;
     vocal_style?: string;
     breathiness?: number;
     tension?: number;
@@ -484,6 +487,8 @@ class ApiClient {
     if (data.name) formData.append("name", data.name);
     if (data.language) formData.append("language", data.language);
     if (data.synthesis_engine) formData.append("synthesis_engine", data.synthesis_engine);
+    if (data.has_vocals) formData.append("has_vocals", "true");
+    if (data.voice_preset) formData.append("voice_preset", data.voice_preset);
     if (data.vocal_style) formData.append("vocal_style", data.vocal_style);
     if (data.breathiness !== undefined) formData.append("breathiness", String(data.breathiness));
     if (data.tension !== undefined) formData.append("tension", String(data.tension));

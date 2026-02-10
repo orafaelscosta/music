@@ -26,6 +26,8 @@ import {
   Radio,
   Gauge,
   Theater,
+  User,
+  Users,
 } from "lucide-react";
 
 // Vocal style presets
@@ -99,6 +101,150 @@ const LANGUAGES = [
   { code: "ja", label: "日本語", flag: "JP" },
 ];
 
+// Gender options
+type GenderOption = "male" | "neutral" | "female";
+const GENDER_OPTIONS: { value: GenderOption; label: string; numericValue: number }[] = [
+  { value: "male", label: "Masculino", numericValue: 20 },
+  { value: "neutral", label: "Neutro", numericValue: 50 },
+  { value: "female", label: "Feminino", numericValue: 80 },
+];
+
+// Voice presets library
+interface VoicePreset {
+  id: string;
+  name: string;
+  description: string;
+  gender: "male" | "female";
+  icon: string;
+  tags: string[];
+  params: VocalParams;
+}
+
+const VOICE_PRESETS: VoicePreset[] = [
+  {
+    id: "tenor_lirico", name: "Tenor Lírico",
+    description: "Voz clara e projetada, ideal para ópera e baladas",
+    gender: "male", icon: "🎭", tags: ["operatic", "classical"],
+    params: { breathiness: 15, tension: 70, energy: 80, vibrato: 75, pitch_range: 85, gender: 20 },
+  },
+  {
+    id: "baritono_pop", name: "Barítono Pop",
+    description: "Voz quente e moderna, perfeita para pop e R&B",
+    gender: "male", icon: "🎤", tags: ["pop", "warm"],
+    params: { breathiness: 30, tension: 40, energy: 65, vibrato: 35, pitch_range: 55, gender: 25 },
+  },
+  {
+    id: "tenor_rock", name: "Tenor Rock",
+    description: "Voz potente e rasgada, para rock e alternativo",
+    gender: "male", icon: "🔥", tags: ["rock", "powerful"],
+    params: { breathiness: 10, tension: 85, energy: 95, vibrato: 30, pitch_range: 75, gender: 20 },
+  },
+  {
+    id: "crooner_jazz", name: "Crooner Jazz",
+    description: "Voz suave e aveludada, estilo jazz e bossa nova",
+    gender: "male", icon: "🎷", tags: ["jazz", "smooth"],
+    params: { breathiness: 45, tension: 25, energy: 45, vibrato: 40, pitch_range: 50, gender: 30 },
+  },
+  {
+    id: "soprano_lirica", name: "Soprano Lírica",
+    description: "Voz poderosa e cristalina, para ópera e clássico",
+    gender: "female", icon: "✨", tags: ["operatic", "classical"],
+    params: { breathiness: 15, tension: 65, energy: 85, vibrato: 80, pitch_range: 95, gender: 80 },
+  },
+  {
+    id: "mezzo_pop", name: "Mezzo Pop",
+    description: "Voz versátil e expressiva, ideal para pop e dance",
+    gender: "female", icon: "💫", tags: ["pop", "expressive"],
+    params: { breathiness: 25, tension: 45, energy: 70, vibrato: 40, pitch_range: 65, gender: 75 },
+  },
+  {
+    id: "alto_indie", name: "Alto Indie",
+    description: "Voz intimista e aérea, estilo indie e folk",
+    gender: "female", icon: "🌙", tags: ["indie", "breathy"],
+    params: { breathiness: 70, tension: 20, energy: 40, vibrato: 25, pitch_range: 50, gender: 65 },
+  },
+  {
+    id: "soprano_ethereal", name: "Soprano Etérea",
+    description: "Voz delicada e sonhadora, para ambient e new age",
+    gender: "female", icon: "🦋", tags: ["ethereal", "ambient"],
+    params: { breathiness: 60, tension: 20, energy: 35, vibrato: 55, pitch_range: 80, gender: 80 },
+  },
+  // --- Novas vozes masculinas ---
+  {
+    id: "contratenor", name: "Contratenor",
+    description: "Voz aguda em falsete, registro celestial e raro",
+    gender: "male", icon: "👼", tags: ["classical", "falsetto"],
+    params: { breathiness: 35, tension: 50, energy: 60, vibrato: 65, pitch_range: 95, gender: 35 },
+  },
+  {
+    id: "soul_gospel", name: "Soul Gospel",
+    description: "Voz quente e emotiva, belting espiritual",
+    gender: "male", icon: "🙏", tags: ["soul", "gospel"],
+    params: { breathiness: 20, tension: 75, energy: 90, vibrato: 60, pitch_range: 80, gender: 25 },
+  },
+  {
+    id: "rapper_mc", name: "Rapper/MC",
+    description: "Voz rítmica e percussiva, flow e atitude",
+    gender: "male", icon: "🎙️", tags: ["hip-hop", "rap"],
+    params: { breathiness: 15, tension: 60, energy: 85, vibrato: 10, pitch_range: 30, gender: 15 },
+  },
+  {
+    id: "country_masculino", name: "Country Tenor",
+    description: "Voz narrativa e acolhedora, estilo Nashville",
+    gender: "male", icon: "🤠", tags: ["country", "warm"],
+    params: { breathiness: 35, tension: 45, energy: 60, vibrato: 45, pitch_range: 60, gender: 25 },
+  },
+  {
+    id: "indie_soft_male", name: "Indie Sussurrado",
+    description: "Voz suave e sussurrada, lo-fi e intimista",
+    gender: "male", icon: "🌿", tags: ["indie", "soft"],
+    params: { breathiness: 80, tension: 15, energy: 30, vibrato: 15, pitch_range: 40, gender: 30 },
+  },
+  {
+    id: "metal_gutural", name: "Metal Gutural",
+    description: "Voz agressiva e intensa, grito e peso",
+    gender: "male", icon: "⚡", tags: ["metal", "aggressive"],
+    params: { breathiness: 5, tension: 95, energy: 100, vibrato: 10, pitch_range: 65, gender: 15 },
+  },
+  // --- Novas vozes femininas ---
+  {
+    id: "diva_rnb", name: "Diva R&B",
+    description: "Voz poderosa e melismática, runs e expressão",
+    gender: "female", icon: "👑", tags: ["r&b", "soulful"],
+    params: { breathiness: 20, tension: 55, energy: 80, vibrato: 65, pitch_range: 85, gender: 75 },
+  },
+  {
+    id: "country_feminino", name: "Country Folk",
+    description: "Voz calorosa e narrativa, violão e história",
+    gender: "female", icon: "🌾", tags: ["country", "folk"],
+    params: { breathiness: 40, tension: 35, energy: 55, vibrato: 35, pitch_range: 55, gender: 70 },
+  },
+  {
+    id: "punk_feminino", name: "Punk Rock",
+    description: "Voz crua e explosiva, atitude e energia",
+    gender: "female", icon: "💥", tags: ["punk", "rock"],
+    params: { breathiness: 10, tension: 80, energy: 95, vibrato: 15, pitch_range: 70, gender: 70 },
+  },
+  {
+    id: "jazz_lounge", name: "Jazz Lounge",
+    description: "Voz esfumada e sedutora, noites de jazz",
+    gender: "female", icon: "🍷", tags: ["jazz", "smoky"],
+    params: { breathiness: 55, tension: 30, energy: 45, vibrato: 45, pitch_range: 55, gender: 65 },
+  },
+  {
+    id: "mpb_bossa", name: "MPB / Bossa",
+    description: "Voz suave e brasileira, bossa nova e MPB",
+    gender: "female", icon: "🌴", tags: ["bossa nova", "mpb"],
+    params: { breathiness: 50, tension: 20, energy: 40, vibrato: 30, pitch_range: 50, gender: 70 },
+  },
+  {
+    id: "gospel_feminino", name: "Gospel Power",
+    description: "Voz explosiva e espiritual, belting e fé",
+    gender: "female", icon: "🔔", tags: ["gospel", "powerful"],
+    params: { breathiness: 10, tension: 70, energy: 95, vibrato: 70, pitch_range: 90, gender: 80 },
+  },
+];
+
 interface VocalParams {
   breathiness: number;
   tension: number;
@@ -126,6 +272,9 @@ export default function QuickStartPage() {
     breathiness: 30, tension: 45, energy: 65, vibrato: 40, pitch_range: 60, gender: 50,
   });
   const [mixPreset, setMixPreset] = useState("balanced");
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [genderOption, setGenderOption] = useState<GenderOption>("neutral");
+  const [voiceFilter, setVoiceFilter] = useState<"all" | "male" | "female">("all");
 
   // Mix sliders
   const [vocalGain, setVocalGain] = useState(0);
@@ -133,15 +282,39 @@ export default function QuickStartPage() {
   const [reverbAmount, setReverbAmount] = useState(25);
   const [compression, setCompression] = useState(40);
 
+  // Tipo de áudio
+  const [hasVocals, setHasVocals] = useState(false);
+
   // UI
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const applyStyle = (styleId: string) => {
     setVocalStyle(styleId);
+    setSelectedVoice(null);
     const style = VOCAL_STYLES.find((s) => s.id === styleId);
     if (style) {
       setVocalParams(style.params);
+      // Sync gender toggle
+      const g = style.params.gender;
+      setGenderOption(g <= 35 ? "male" : g >= 65 ? "female" : "neutral");
     }
+  };
+
+  const applyVoicePreset = (presetId: string) => {
+    const preset = VOICE_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    setSelectedVoice(presetId);
+    setVocalParams(preset.params);
+    setGenderOption(preset.gender === "male" ? "male" : "female");
+    setVocalStyle("custom");
+  };
+
+  const handleGenderChange = (opt: GenderOption) => {
+    setGenderOption(opt);
+    const numVal = GENDER_OPTIONS.find((g) => g.value === opt)?.numericValue ?? 50;
+    setVocalParams((p) => ({ ...p, gender: numVal }));
+    setSelectedVoice(null);
+    setVocalStyle("custom");
   };
 
   const quickStartMutation = useMutation({
@@ -154,6 +327,8 @@ export default function QuickStartPage() {
         name: name.trim() || undefined,
         language,
         synthesis_engine: engine,
+        has_vocals: hasVocals,
+        voice_preset: selectedVoice || undefined,
         vocal_style: vocalStyle,
         breathiness: vocalParams.breathiness,
         tension: vocalParams.tension,
@@ -267,6 +442,31 @@ export default function QuickStartPage() {
               </div>
             )}
             <input ref={fileInputRef} type="file" accept=".wav,.mp3,.flac,.ogg,.m4a" className="hidden" onChange={handleFileSelect} />
+
+            {/* Toggle: música com vocal */}
+            <div className="mt-3 flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/50 p-3">
+              <div>
+                <p className="text-sm text-gray-300">Contém vocal?</p>
+                <p className="text-xs text-gray-600">
+                  {hasVocals
+                    ? "Demucs separa vocal + instrumental"
+                    : "Apenas instrumental (sem vocal)"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHasVocals(!hasVocals)}
+                className={`relative h-6 w-11 rounded-full transition-colors ${
+                  hasVocals ? "bg-brand-600" : "bg-gray-700"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                    hasVocals ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* Lyrics */}
@@ -325,6 +525,85 @@ export default function QuickStartPage() {
 
         {/* Right column: Style & Controls */}
         <div className="lg:col-span-3 space-y-6 animate-slide-up stagger-2">
+          {/* Voice Library */}
+          <div className="card">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              <Users className="h-4 w-4" />
+              Biblioteca de Vozes
+            </h2>
+
+            {/* Gender filter tabs */}
+            <div className="mb-4 flex gap-2">
+              {(["all", "male", "female"] as const).map((filter) => {
+                const filterLabels = { all: "Todas", male: "Masculinas", female: "Femininas" };
+                const filteredCount = filter === "all"
+                  ? VOICE_PRESETS.length
+                  : VOICE_PRESETS.filter((p) => p.gender === filter).length;
+                return (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setVoiceFilter(filter)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                      voiceFilter === filter
+                        ? "border-brand-500 bg-brand-500/10 text-brand-400"
+                        : "border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-300"
+                    }`}
+                  >
+                    {filterLabels[filter]} ({filteredCount})
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+              {VOICE_PRESETS.filter((p) => voiceFilter === "all" || p.gender === voiceFilter).map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => applyVoicePreset(preset.id)}
+                  className={`group relative overflow-hidden rounded-xl border p-3 text-left transition-all duration-200 ${
+                    selectedVoice === preset.id
+                      ? "border-brand-500 bg-brand-500/10 shadow-lg shadow-brand-500/20"
+                      : "border-gray-800 bg-gray-900/50 hover:border-gray-700 hover:bg-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-lg">{preset.icon}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                      preset.gender === "male"
+                        ? "bg-blue-500/15 text-blue-400"
+                        : "bg-pink-500/15 text-pink-400"
+                    }`}>
+                      {preset.gender === "male" ? "M" : "F"}
+                    </span>
+                  </div>
+                  <h4 className={`text-xs font-semibold ${
+                    selectedVoice === preset.id ? "text-white" : "text-gray-300"
+                  }`}>
+                    {preset.name}
+                  </h4>
+                  <p className="mt-0.5 text-[10px] text-gray-500 line-clamp-2">
+                    {preset.description}
+                  </p>
+                  {selectedVoice === preset.id && (
+                    <div className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {selectedVoice && (
+              <button
+                type="button"
+                onClick={() => { setSelectedVoice(null); }}
+                className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                Limpar seleção (usar configuração manual)
+              </button>
+            )}
+          </div>
+
           {/* Vocal Style */}
           <div className="card">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
@@ -394,14 +673,27 @@ export default function QuickStartPage() {
                 color="emerald"
                 onChange={(v) => { setVocalParams((p) => ({ ...p, pitch_range: v })); setVocalStyle("custom"); }}
               />
-              <StudioSlider
-                label="Gênero (grave ↔ agudo)"
-                value={vocalParams.gender}
-                min={0} max={100}
-                unit="%"
-                color="brand"
-                onChange={(v) => { setVocalParams((p) => ({ ...p, gender: v })); setVocalStyle("custom"); }}
-              />
+              <div>
+                <label className="mb-2 block text-xs font-medium text-gray-400">
+                  Gênero Vocal
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 rounded-lg border border-gray-800 bg-gray-900/50 p-1.5">
+                  {GENDER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleGenderChange(opt.value)}
+                      className={`rounded-md px-3 py-2 text-xs font-medium transition-all ${
+                        genderOption === opt.value
+                          ? "bg-brand-600 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-300 hover:bg-gray-800"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -537,7 +829,16 @@ export default function QuickStartPage() {
               {lyrics.trim() ? `${lyrics.trim().split("\n").length} linhas` : "Sem letra"}
             </span>
             <span className="rounded-md border border-gray-700/50 bg-gray-800/30 px-2 py-1 text-gray-400">
-              {VOCAL_STYLES.find((s) => s.id === vocalStyle)?.label}
+              {selectedVoice
+                ? VOICE_PRESETS.find((p) => p.id === selectedVoice)?.name
+                : VOCAL_STYLES.find((s) => s.id === vocalStyle)?.label}
+            </span>
+            <span className={`rounded-md border px-2 py-1 text-gray-400 ${
+              genderOption === "male" ? "border-blue-500/30 bg-blue-500/10 text-blue-400" :
+              genderOption === "female" ? "border-pink-500/30 bg-pink-500/10 text-pink-400" :
+              "border-gray-700/50 bg-gray-800/30"
+            }`}>
+              {genderOption === "male" ? "M" : genderOption === "female" ? "F" : "N"}
             </span>
             <span className="rounded-md border border-gray-700/50 bg-gray-800/30 px-2 py-1 font-medium uppercase text-gray-400">
               {language}

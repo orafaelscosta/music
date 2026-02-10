@@ -1,9 +1,16 @@
 """Celery tasks para processamento assíncrono."""
 
 import asyncio
+import sys
+from pathlib import Path
 
 import structlog
 from celery import Celery
+
+# Garantir que o diretório backend/ está no sys.path para imports
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
 
 from config import settings
 
@@ -29,6 +36,13 @@ celery_app.conf.update(
 )
 
 
+def _ensure_backend_path():
+    """Garante que backend/ está no sys.path (necessário para workers fork/spawn)."""
+    backend = str(Path(__file__).resolve().parent.parent)
+    if backend not in sys.path:
+        sys.path.insert(0, backend)
+
+
 def _run_async(coro):
     """Utilitário para rodar coroutines dentro de tasks Celery."""
     loop = asyncio.new_event_loop()
@@ -41,9 +55,11 @@ def _run_async(coro):
 @celery_app.task(bind=True, name="pipeline.full")
 def run_full_pipeline(self, project_id: str) -> dict:
     """Executa o pipeline completo de processamento."""
+    _ensure_backend_path()
     logger.info("celery_pipeline_full", project_id=project_id, task_id=self.request.id)
 
     async def _execute():
+        _ensure_backend_path()
         from database import async_session
         from services.orchestrator import PipelineOrchestrator
 
@@ -58,6 +74,7 @@ def run_full_pipeline(self, project_id: str) -> dict:
 @celery_app.task(bind=True, name="pipeline.step")
 def run_pipeline_step(self, project_id: str, step: str) -> dict:
     """Executa um passo específico do pipeline."""
+    _ensure_backend_path()
     logger.info(
         "celery_pipeline_step",
         project_id=project_id,
@@ -66,6 +83,7 @@ def run_pipeline_step(self, project_id: str, step: str) -> dict:
     )
 
     async def _execute():
+        _ensure_backend_path()
         from database import async_session
         from models.project import PipelineStep
         from services.orchestrator import PipelineOrchestrator

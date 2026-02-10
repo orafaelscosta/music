@@ -1,7 +1,7 @@
 """Wrapper para Applio/RVC — conversão de timbre vocal."""
 
 import asyncio
-import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -48,7 +48,11 @@ class RVCConfig:
 
     @classmethod
     def from_dict(cls, data: dict) -> "RVCConfig":
-        return cls(**{k: v for k, v in data.items() if k in cls.__init__.__code__.co_varnames})
+        valid_keys = {
+            "model_name", "pitch_shift", "index_rate", "filter_radius",
+            "rms_mix_rate", "protect", "f0_method", "sample_rate",
+        }
+        return cls(**{k: v for k, v in data.items() if k in valid_keys})
 
 
 class RVCService:
@@ -62,28 +66,30 @@ class RVCService:
         """Verifica se o Applio/RVC está instalado."""
         if not self.engine_path.exists():
             return False
-        return (self.engine_path / "infer-web.py").exists() or any(self.engine_path.glob("*.py"))
+        return (self.engine_path / "rvc" / "infer" / "infer.py").exists()
 
     def list_models(self) -> list[dict]:
         """Lista modelos RVC disponíveis."""
         models = []
-        models_dir = self.engine_path / "models"
-        if not models_dir.exists():
-            return models
+        # Procurar em engines/applio/repo/models/ e engines/applio/models/
+        search_dirs = [
+            self.engine_path / "models",
+            self.engine_path / "rvc" / "models",
+        ]
 
-        for pth_file in models_dir.glob("**/*.pth"):
-            index_file = pth_file.with_suffix(".index")
-            if not index_file.exists():
-                # Procurar index no mesmo diretório
+        for models_dir in search_dirs:
+            if not models_dir.exists():
+                continue
+            for pth_file in models_dir.rglob("*.pth"):
                 index_files = list(pth_file.parent.glob("*.index"))
                 index_file = index_files[0] if index_files else None
 
-            models.append({
-                "name": pth_file.stem,
-                "path": str(pth_file),
-                "has_index": index_file is not None and index_file.exists(),
-                "index_path": str(index_file) if index_file and index_file.exists() else None,
-            })
+                models.append({
+                    "name": pth_file.stem,
+                    "path": str(pth_file),
+                    "has_index": index_file is not None,
+                    "index_path": str(index_file) if index_file else None,
+                })
         return models
 
     async def convert(
@@ -114,10 +120,14 @@ class RVCService:
             raise FileNotFoundError(f"Arquivo de entrada não encontrado: {input_path}")
 
         if self.is_available() and config.model_name:
-            return self._run_engine(input_path, output_path, config)
-        else:
-            logger.warning("rvc_nao_disponivel_usando_fallback")
-            return self._apply_placeholder_effect(input_path, output_path, config)
+            try:
+                return self._run_engine(input_path, output_path, config)
+            except Exception as e:
+                logger.error("rvc_engine_erro", error=str(e))
+                logger.warning("rvc_fallback_apos_erro")
+
+        logger.warning("rvc_nao_disponivel_usando_fallback")
+        return self._apply_placeholder_effect(input_path, output_path, config)
 
     def _run_engine(
         self,
@@ -125,32 +135,42 @@ class RVCService:
         output_path: Path,
         config: RVCConfig,
     ) -> Path:
-        """Executa o Applio/RVC real."""
-        model_path = self.engine_path / "models" / f"{config.model_name}.pth"
+        """Executa o Applio/RVC via API Python direta."""
+        # Adicionar Applio ao sys.path
+        applio_root = str(self.engine_path)
+        if applio_root not in sys.path:
+            sys.path.insert(0, applio_root)
 
-        cmd = [
-            "python", str(self.engine_path / "infer-web.py"),
-            "--input", str(input_path),
-            "--output", str(output_path),
-            "--model", str(model_path),
-            "--pitch", str(config.pitch_shift),
-            "--index_rate", str(config.index_rate),
-            "--filter_radius", str(config.filter_radius),
-            "--rms_mix_rate", str(config.rms_mix_rate),
-            "--protect", str(config.protect),
-            "--f0_method", config.f0_method,
-        ]
+        from rvc.infer.infer import VoiceConverter
 
-        try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=600
-            )
-            if result.returncode != 0:
-                logger.error("rvc_erro", stderr=result.stderr)
-                raise RuntimeError(f"RVC falhou: {result.stderr[:500]}")
-        except FileNotFoundError:
-            logger.warning("rvc_cli_nao_encontrado_usando_fallback")
-            return self._apply_placeholder_effect(input_path, output_path, config)
+        converter = VoiceConverter()
+
+        # Encontrar modelo
+        model_path = None
+        index_path = ""
+        for model in self.list_models():
+            if model["name"] == config.model_name or config.model_name in model["name"]:
+                model_path = model["path"]
+                index_path = model.get("index_path", "") or ""
+                break
+
+        if not model_path:
+            raise FileNotFoundError(f"Modelo RVC '{config.model_name}' não encontrado")
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        converter.convert_audio(
+            audio_input_path=str(input_path),
+            audio_output_path=str(output_path),
+            model_path=model_path,
+            index_path=index_path,
+            pitch=config.pitch_shift,
+            f0_method=config.f0_method,
+            index_rate=config.index_rate,
+            volume_envelope=config.rms_mix_rate,
+            protect=config.protect,
+            export_format="WAV",
+        )
 
         logger.info("rvc_conversao_concluida", output=str(output_path))
         return output_path

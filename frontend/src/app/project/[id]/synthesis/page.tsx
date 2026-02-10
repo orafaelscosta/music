@@ -19,7 +19,7 @@ import {
 
 const DEFAULT_PARAMS: SynthesisParams = {
   engine: "diffsinger",
-  voicebank: "leif",
+  voicebank: "umidaji",
   breathiness: 0,
   tension: 0,
   energy: 1.0,

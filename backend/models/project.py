@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Enum, Float, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -28,6 +28,7 @@ class PipelineStep(str, enum.Enum):
     """Etapas do pipeline de processamento."""
 
     UPLOAD = "upload"
+    SEPARATION = "separation"
     ANALYSIS = "analysis"
     MELODY = "melody"
     SYNTHESIS = "synthesis"
@@ -65,6 +66,9 @@ class Project(Base):
     # Letra e idioma
     lyrics: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str | None] = mapped_column(String(10), default="it")
+
+    # Indica se o áudio enviado contém vocal (precisa separação Demucs)
+    has_vocals: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Configurações do engine
     synthesis_engine: Mapped[str | None] = mapped_column(

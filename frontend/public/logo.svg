@@ -1,89 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <!-- Gradient inspired by warm tones (red shirt, warm personality) -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a2e"/>
-      <stop offset="100%" style="stop-color:#16213e"/>
+    <linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e74c3c"/>
+      <stop offset="100%" stop-color="#8e44ad"/>
     </linearGradient>
-    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#e74c3c"/>
-      <stop offset="50%" style="stop-color:#c0392b"/>
-      <stop offset="100%" style="stop-color:#8e44ad"/>
-    </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#f39c12"/>
-      <stop offset="100%" style="stop-color:#e74c3c"/>
-    </linearGradient>
-    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:0.8"/>
-      <stop offset="50%" style="stop-color:#8e44ad;stop-opacity:0.6"/>
-      <stop offset="100%" style="stop-color:#3498db;stop-opacity:0.4"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
-
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="250" fill="url(#bgGrad)" stroke="url(#mainGrad)" stroke-width="3"/>
-
-  <!-- Outer ring - sound wave ring -->
-  <circle cx="256" cy="256" r="230" fill="none" stroke="url(#mainGrad)" stroke-width="1.5" opacity="0.3"/>
-  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#mainGrad)" stroke-width="0.5" opacity="0.2"/>
-
-  <!-- Sound wave arcs around the C (representing music/audio) -->
-  <path d="M 380 180 Q 420 256 380 332" fill="none" stroke="url(#waveGrad)" stroke-width="3" stroke-linecap="round" opacity="0.6" filter="url(#glow)"/>
-  <path d="M 400 160 Q 450 256 400 352" fill="none" stroke="url(#waveGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
-  <path d="M 418 142 Q 475 256 418 370" fill="none" stroke="url(#waveGrad)" stroke-width="2" stroke-linecap="round" opacity="0.25"/>
-
-  <!-- Main "C" letter - stylized, bold, inspired by warm/distinguished character -->
-  <path d="M 310 140
-           C 260 110, 170 120, 140 170
-           C 100 235, 100 290, 140 350
-           C 170 395, 260 405, 310 375"
-        fill="none"
-        stroke="url(#mainGrad)"
-        stroke-width="32"
-        stroke-linecap="round"
-        filter="url(#glow)"/>
-
-  <!-- Musical note accent inside the C -->
-  <g transform="translate(210, 215)" filter="url(#glow)">
-    <!-- Note stem -->
-    <line x1="35" y1="10" x2="35" y2="65" stroke="url(#accentGrad)" stroke-width="4" stroke-linecap="round"/>
-    <!-- Note head -->
-    <ellipse cx="25" cy="65" rx="16" ry="12" fill="url(#accentGrad)" transform="rotate(-15, 25, 65)"/>
-    <!-- Flag -->
-    <path d="M 35 10 C 55 20, 55 35, 40 45" fill="none" stroke="url(#accentGrad)" stroke-width="3.5" stroke-linecap="round"/>
-  </g>
-
-  <!-- Small stars/sparkle accents (AI element) -->
-  <g opacity="0.7" filter="url(#glow)">
-    <!-- Star 1 -->
-    <path d="M 350 120 L 353 128 L 361 131 L 353 134 L 350 142 L 347 134 L 339 131 L 347 128 Z" fill="#f39c12"/>
-    <!-- Star 2 -->
-    <path d="M 155 380 L 157 386 L 163 388 L 157 390 L 155 396 L 153 390 L 147 388 L 153 386 Z" fill="#e74c3c"/>
-    <!-- Star 3 -->
-    <path d="M 130 150 L 132 155 L 137 157 L 132 159 L 130 164 L 128 159 L 123 157 L 128 155 Z" fill="#8e44ad"/>
-  </g>
-
-  <!-- "AI" text in bottom right of the C curve -->
-  <text x="300" y="310" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="42" fill="url(#accentGrad)" letter-spacing="2" filter="url(#glow)">AI</text>
-
-  <!-- Bottom text: "CLOVIS" -->
-  <text x="256" y="465" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="30" fill="#ffffff" text-anchor="middle" letter-spacing="8" opacity="0.9">CLOVIS</text>
-
-  <!-- Subtle "Music Creation" subtitle -->
-  <text x="256" y="490" font-family="system-ui, -apple-system, sans-serif" font-weight="300" font-size="13" fill="#ffffff" text-anchor="middle" letter-spacing="4" opacity="0.5">MUSIC CREATION</text>
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="16" fill="#0f0f1a"/>
+  <!-- C letter - bold, clean -->
+  <path d="M 40 18 C 28 14, 16 22, 16 32 C 16 42, 28 50, 40 46" stroke="url(#g)" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- Sound waves - two simple arcs -->
+  <path d="M 42 24 C 48 28, 48 36, 42 40" stroke="url(#g)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M 47 20 C 55 26, 55 38, 47 44" stroke="url(#g)" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.4"/>
 </svg>

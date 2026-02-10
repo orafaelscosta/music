@@ -303,6 +303,11 @@ class MixerService:
         ])
         mixed = master_board(mixed.astype(np.float32), sr)
 
+        # Safety: garantir que não há clipping
+        peak = np.max(np.abs(mixed))
+        if peak > 0.95:
+            mixed = (mixed / peak * 0.92).astype(np.float32)
+
         # Salvar
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with AudioFile(str(output_path), "w", sr, num_channels=2) as f:

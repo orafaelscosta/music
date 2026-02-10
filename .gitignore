@@ -20,12 +20,28 @@ dist/
 build/
 *.egg-info/
 
-# AI Models (large files)
+# AI Engines (cloned repos, models, voicebanks)
+engines/*/repo/
+engines/*/model/
 engines/diffsinger/*.onnx
 engines/ace-step/models/
 engines/applio/models/
-engines/voicebanks/**/*.pth
-engines/voicebanks/**/*.onnx
+engines/voicebanks/
+*.safetensors
+*.pth
+*.onnx
+
+# Database
+*.db
+
+# Docker artifacts
+*.tar.gz
+
+# Build info
+tsconfig.tsbuildinfo
+
+# Claude local settings
+.claude/settings.local.json
 
 # IDE
 .vscode/

@@ -32,7 +32,7 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-600/25 transition-all duration-200 hover:from-brand-500 hover:to-brand-400 hover:shadow-brand-500/30 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none;
+    @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-600/25 transition-all duration-200 hover:from-brand-400 hover:to-accent-400 hover:shadow-brand-500/30 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none;
   }
 
   .btn-secondary {
@@ -80,6 +80,11 @@
   50% { transform: translateY(-6px); }
 }
 
+@keyframes progress-stripe {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-out both;
 }
@@ -102,6 +107,21 @@
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+.animate-progress-stripe {
+  animation: progress-stripe 1s linear infinite;
+  background-image: linear-gradient(
+    45deg,
+    rgba(255,255,255,0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255,255,255,0.1) 50%,
+    rgba(255,255,255,0.1) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 40px 40px;
 }
 
 /* Staggered entrance animations */
@@ -130,9 +150,9 @@
 /* Gradient mesh background */
 .mesh-gradient {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(92, 124, 250, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(231, 76, 60, 0.06) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(142, 68, 173, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(231, 76, 60, 0.04) 0%, transparent 50%);
+    radial-gradient(ellipse at 50% 80%, rgba(231, 76, 60, 0.03) 0%, transparent 50%);
 }
 
 /* Waveform custom styles */
@@ -168,6 +188,6 @@
 
 /* Selection color */
 ::selection {
-  background: rgba(92, 124, 250, 0.3);
+  background: rgba(231, 76, 60, 0.3);
   color: white;
 }

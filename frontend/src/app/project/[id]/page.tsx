@@ -18,22 +18,36 @@ import {
   Music2,
   FileAudio,
   Activity,
-  Settings,
   Loader2,
   Mic,
   PenTool,
   Sliders,
-  GitCompare,
+  Play,
+  ArrowRight,
+  AlertCircle,
+  Upload,
+  BarChart3,
 } from "lucide-react";
 
 const PIPELINE_STEPS = [
   "upload",
+  "separation",
   "analysis",
   "melody",
   "synthesis",
   "refinement",
   "mix",
 ] as const;
+
+const STEP_ICONS: Record<string, React.ElementType> = {
+  upload: Upload,
+  separation: Activity,
+  analysis: BarChart3,
+  melody: PenTool,
+  synthesis: Mic,
+  refinement: Sliders,
+  mix: Music2,
+};
 
 export default function ProjectPage() {
   const params = useParams();
@@ -64,11 +78,10 @@ export default function ProjectPage() {
       if (msg.type === "progress") {
         setWsProgress(msg);
         refetch();
-        // Toast notifications for pipeline events
         if (msg.status === "completed" && msg.step === "completed") {
           showToast({
             type: "success",
-            title: "Pipeline concluído!",
+            title: "Pipeline concluido!",
             message: "Todos os passos foram finalizados com sucesso.",
           });
         } else if (msg.status === "error") {
@@ -81,7 +94,7 @@ export default function ProjectPage() {
         } else if (msg.status === "completed" && msg.step) {
           showToast({
             type: "info",
-            title: `${msg.step} concluído`,
+            title: `${STEP_LABELS[msg.step] || msg.step} concluido`,
             duration: 3000,
           });
         }
@@ -99,7 +112,7 @@ export default function ProjectPage() {
       showToast({
         type: "info",
         title: "Pipeline iniciado",
-        message: "O processamento começou. Acompanhe o progresso abaixo.",
+        message: "O processamento comecou. Acompanhe o progresso acima.",
       });
     },
     onError: (err: Error) => {
@@ -123,63 +136,189 @@ export default function ProjectPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <h2 className="text-xl font-semibold text-gray-400">
-          Projeto não encontrado
+          Projeto nao encontrado
         </h2>
       </div>
     );
   }
 
+  // Determine next action for the user
+  const getNextAction = () => {
+    if (!project.instrumental_filename) {
+      return {
+        label: "Envie um instrumental para comecar",
+        step: "upload",
+        icon: Upload,
+      };
+    }
+    if (!project.bpm) {
+      return {
+        label: "Aguarde a analise do audio...",
+        step: "analysis",
+        icon: BarChart3,
+        loading: true,
+      };
+    }
+    if (!project.lyrics) {
+      return {
+        label: "Escreva a letra para gerar vocais",
+        step: "lyrics",
+        icon: PenTool,
+      };
+    }
+    if (
+      project.status === "created" ||
+      project.status === "analyzing" ||
+      project.status === "melody_ready"
+    ) {
+      return {
+        label: "Inicie o pipeline para gerar vocais",
+        step: "pipeline",
+        icon: Play,
+      };
+    }
+    if (project.status === "completed") {
+      return {
+        label: "Projeto concluido! Ouca e exporte o resultado",
+        step: "completed",
+        icon: CheckCircle,
+      };
+    }
+    if (project.status === "error") {
+      return {
+        label: "Ocorreu um erro. Tente novamente",
+        step: "error",
+        icon: AlertCircle,
+      };
+    }
+    return {
+      label: "Processando...",
+      step: "processing",
+      icon: Loader2,
+      loading: true,
+    };
+  };
+
+  const nextAction = getNextAction();
+  const isProcessing =
+    project.status !== "created" &&
+    project.status !== "completed" &&
+    project.status !== "error" &&
+    project.status !== "melody_ready";
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* Project Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <a
-            href="/"
-            className="text-sm text-gray-500 hover:text-gray-300"
-          >
-            Projetos
-          </a>
-          <span className="text-gray-600">/</span>
-          <span className="text-sm text-gray-300">{project.name}</span>
+      {/* Breadcrumb */}
+      <div className="mb-6 flex items-center gap-2 text-sm">
+        <a href="/" className="text-gray-500 hover:text-gray-300 transition-colors">
+          Projetos
+        </a>
+        <span className="text-gray-700">/</span>
+        <span className="text-gray-300 font-medium">{project.name}</span>
+      </div>
+
+      {/* Project Header + Status */}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+          {project.description && !project.description.startsWith("{") && (
+            <p className="mt-1 text-sm text-gray-500">{project.description}</p>
+          )}
+          {/* Metadata chips */}
+          {project.bpm && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 rounded-md bg-gray-800/60 px-2 py-1 text-xs text-gray-400 border border-gray-700/50">
+                <Music className="h-3 w-3" />
+                {project.bpm} BPM
+              </span>
+              {project.musical_key && (
+                <span className="rounded-md bg-gray-800/60 px-2 py-1 text-xs text-gray-400 border border-gray-700/50">
+                  {project.musical_key}
+                </span>
+              )}
+              {project.duration_seconds && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-gray-800/60 px-2 py-1 text-xs text-gray-400 border border-gray-700/50">
+                  <FileAudio className="h-3 w-3" />
+                  {formatDuration(project.duration_seconds)}
+                </span>
+              )}
+              <span className="rounded-md bg-gray-800/60 px-2 py-1 text-xs font-medium text-gray-400 uppercase border border-gray-700/50">
+                {project.language || "it"}
+              </span>
+            </div>
+          )}
         </div>
-        <div className="mt-4 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-            {project.description && (
-              <p className="mt-1 text-gray-400">{project.description}</p>
-            )}
-          </div>
-          <span
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
-              project.status === "completed"
-                ? "bg-green-400/10 text-green-400"
-                : project.status === "error"
-                ? "bg-red-400/10 text-red-400"
-                : "bg-brand-400/10 text-brand-400"
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            project.status === "completed"
+              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+              : project.status === "error"
+              ? "bg-red-500/15 text-red-400 border border-red-500/20"
+              : isProcessing
+              ? "bg-brand-500/15 text-brand-400 border border-brand-500/20"
+              : "bg-gray-500/15 text-gray-400 border border-gray-500/20"
+          }`}
+        >
+          {STATUS_LABELS[project.status] || project.status}
+        </span>
+      </div>
+
+      {/* Next Action Banner */}
+      <div
+        className={`mb-6 rounded-xl border p-4 flex items-center gap-4 ${
+          nextAction.step === "completed"
+            ? "border-emerald-500/20 bg-emerald-500/5"
+            : nextAction.step === "error"
+            ? "border-red-500/20 bg-red-500/5"
+            : nextAction.loading
+            ? "border-brand-500/20 bg-brand-500/5"
+            : "border-accent-500/20 bg-accent-500/5"
+        }`}
+      >
+        <div
+          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+            nextAction.step === "completed"
+              ? "bg-emerald-500/20 text-emerald-400"
+              : nextAction.step === "error"
+              ? "bg-red-500/20 text-red-400"
+              : nextAction.loading
+              ? "bg-brand-500/20 text-brand-400"
+              : "bg-accent-500/20 text-accent-400"
+          }`}
+        >
+          {nextAction.loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <nextAction.icon className="h-5 w-5" />
+          )}
+        </div>
+        <div className="flex-1">
+          <p
+            className={`text-sm font-medium ${
+              nextAction.step === "completed"
+                ? "text-emerald-300"
+                : nextAction.step === "error"
+                ? "text-red-300"
+                : "text-gray-200"
             }`}
           >
-            {STATUS_LABELS[project.status] || project.status}
-          </span>
+            {nextAction.loading ? "Proximo passo" : "Proximo passo"}
+          </p>
+          <p className="text-sm text-gray-400">{nextAction.label}</p>
         </div>
-
-        {/* Metadata */}
-        {project.bpm && (
-          <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-400">
-            <span className="flex items-center gap-1">
-              <Music className="h-4 w-4" />
-              {project.bpm} BPM
-            </span>
-            {project.musical_key && <span>{project.musical_key}</span>}
-            {project.duration_seconds && (
-              <span className="flex items-center gap-1">
-                <FileAudio className="h-4 w-4" />
-                {formatDuration(project.duration_seconds)}
-              </span>
+        {nextAction.step === "pipeline" && (
+          <button
+            className="btn-primary flex items-center gap-2 flex-shrink-0"
+            onClick={() => pipelineMutation.mutate()}
+            disabled={pipelineMutation.isPending}
+          >
+            {pipelineMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
             )}
-            {project.sample_rate && <span>{project.sample_rate} Hz</span>}
-            <span className="uppercase">{project.language || "it"}</span>
-          </div>
+            Iniciar Pipeline
+          </button>
         )}
       </div>
 
@@ -191,56 +330,59 @@ export default function ProjectPage() {
           progress={wsProgress?.progress ?? project.progress}
           status={pipelineStatus as Record<string, unknown> | undefined}
           projectStatus={project.status}
+          wsMessage={wsProgress}
         />
       </div>
 
       {/* Error Message */}
       {project.error_message && (
-        <div className="mb-8 rounded-lg border border-red-800 bg-red-900/20 p-4">
-          <p className="text-sm text-red-400">{project.error_message}</p>
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-800/50 bg-red-900/10 p-4">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-400 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-red-300">Erro no processamento</p>
+            <p className="mt-1 text-xs text-red-400/80">{project.error_message}</p>
+          </div>
         </div>
       )}
 
-      {/* Results Section — visible when completed */}
+      {/* Results — visible when completed */}
       {project.status === "completed" && (
-        <div className="mb-8 rounded-lg border border-green-800 bg-green-900/10 p-6">
+        <div className="mb-8 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <CheckCircle className="h-6 w-6 text-green-400" />
-            <h2 className="text-lg font-semibold text-green-400">
-              Projeto Concluído
+            <CheckCircle className="h-6 w-6 text-emerald-400" />
+            <h2 className="text-lg font-bold text-emerald-300">
+              Projeto Concluido
             </h2>
           </div>
-          <p className="mb-4 text-sm text-gray-400">
-            Todos os passos do pipeline foram finalizados. Ouça a mixagem final
-            ou exporte em diferentes formatos.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-gray-700 p-4">
-              <h3 className="mb-2 text-sm font-medium text-white">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-700/50 bg-gray-900/50 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-white">
                 Mixagem Final
               </h3>
               <AudioPlayer projectId={projectId} filename="mix_final.wav" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-white mb-2">
+            <div>
+              <h3 className="text-sm font-semibold text-white mb-3">
                 Downloads
               </h3>
-              {["mix_final.wav", "vocals_refined.wav", "vocals_raw.wav", "melody.mid"].map(
-                (file) => (
-                  <a
-                    key={file}
-                    href={api.getAudioUrl(projectId, file)}
-                    className="flex items-center gap-2 rounded-lg border border-gray-700 p-2 text-xs text-gray-400 hover:border-gray-600 hover:text-gray-300"
-                    download
-                  >
-                    <Download className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{file}</span>
-                  </a>
-                )
-              )}
+              <div className="space-y-2">
+                {["mix_final.wav", "vocals_refined.wav", "vocals_raw.wav", "melody.mid"].map(
+                  (file) => (
+                    <a
+                      key={file}
+                      href={api.getAudioUrl(projectId, file)}
+                      className="flex items-center gap-2 rounded-lg border border-gray-700/50 bg-gray-900/30 p-2.5 text-xs text-gray-400 hover:border-gray-600 hover:text-gray-300 transition-colors"
+                      download
+                    >
+                      <Download className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{file}</span>
+                    </a>
+                  )
+                )}
+              </div>
               <a
                 href={`/project/${projectId}/mix`}
-                className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-2"
+                className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-3"
               >
                 <Sliders className="h-4 w-4" />
                 Ajustar Mix e Exportar
@@ -250,8 +392,8 @@ export default function ProjectPage() {
         </div>
       )}
 
-      {/* Main Content - Step-based */}
-      <div className="grid gap-8 lg:grid-cols-3">
+      {/* Main Content */}
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: Main area */}
         <div className="lg:col-span-2 space-y-6">
           {/* Upload Section */}
@@ -279,78 +421,11 @@ export default function ProjectPage() {
             </div>
           )}
 
-          {/* Melody Editor Link */}
-          {project.instrumental_filename && project.bpm && (
-            <div className="card">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                <PenTool className="h-5 w-5 text-brand-400" />
-                Melodia
-              </h2>
-              <p className="mb-4 text-sm text-gray-400">
-                Crie ou edite a melodia vocal no piano roll. Extraia do
-                instrumental, importe MIDI ou desenhe manualmente.
-              </p>
-              <a
-                href={`/project/${projectId}/melody`}
-                className="btn-primary inline-flex items-center gap-2"
-              >
-                <Music className="h-4 w-4" />
-                Abrir Editor de Melodia
-              </a>
-            </div>
-          )}
-
-          {/* Workflow Navigation */}
-          {project.instrumental_filename && project.bpm && (
-            <div className="card">
-              <h2 className="mb-4 text-lg font-semibold text-white">
-                Pipeline de Produção
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <a
-                  href={`/project/${projectId}/melody`}
-                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
-                >
-                  <PenTool className="h-4 w-4" />
-                  Melodia
-                </a>
-                <a
-                  href={`/project/${projectId}/synthesis`}
-                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
-                >
-                  <Mic className="h-4 w-4" />
-                  Síntese
-                </a>
-                <a
-                  href={`/project/${projectId}/refinement`}
-                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
-                >
-                  <Sliders className="h-4 w-4" />
-                  Refinamento
-                </a>
-                <a
-                  href={`/project/${projectId}/mix`}
-                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-brand-500 hover:text-brand-400 transition-colors"
-                >
-                  <Music2 className="h-4 w-4" />
-                  Mixagem
-                </a>
-                <a
-                  href={`/project/${projectId}/compare`}
-                  className="flex items-center gap-2 rounded-lg border border-gray-700 p-3 text-sm text-gray-400 hover:border-purple-500 hover:text-purple-400 transition-colors"
-                >
-                  <GitCompare className="h-4 w-4" />
-                  Comparar
-                </a>
-              </div>
-            </div>
-          )}
-
           {/* Lyrics Editor */}
           {project.instrumental_filename && (
             <div className="card">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                <Settings className="h-5 w-5 text-brand-400" />
+                <PenTool className="h-5 w-5 text-accent-400" />
                 Letra
               </h2>
               <LyricsEditor
@@ -364,28 +439,72 @@ export default function ProjectPage() {
 
         {/* Right: Sidebar */}
         <div className="space-y-6">
+          {/* Quick Actions */}
+          {project.instrumental_filename && project.bpm && (
+            <div className="card">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+                Acoes rapidas
+              </h3>
+              {project.lyrics && (
+                <button
+                  className="btn-primary w-full flex items-center justify-center gap-2 mb-3"
+                  onClick={() => pipelineMutation.mutate()}
+                  disabled={
+                    pipelineMutation.isPending || isProcessing
+                  }
+                >
+                  {pipelineMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {isProcessing ? "Processando..." : "Iniciar Pipeline Completo"}
+                </button>
+              )}
+
+              <div className="space-y-1.5">
+                {[
+                  { step: "melody", icon: PenTool, label: "Editor de Melodia" },
+                  { step: "synthesis", icon: Mic, label: "Sintese Vocal" },
+                  { step: "refinement", icon: Sliders, label: "Refinamento" },
+                  { step: "mix", icon: Music2, label: "Mixagem" },
+                ].map(({ step, icon: Icon, label }) => (
+                  <a
+                    key={step}
+                    href={`/project/${projectId}/${step}`}
+                    className="flex items-center gap-3 rounded-lg border border-gray-800/50 p-2.5 text-sm text-gray-400 transition-all hover:border-brand-500/30 hover:bg-brand-500/5 hover:text-gray-200"
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{label}</span>
+                    <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Project Info */}
           <div className="card">
-            <h3 className="mb-3 text-sm font-semibold uppercase text-gray-500">
-              Informações
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+              Informacoes
             </h3>
-            <dl className="space-y-2 text-sm">
+            <dl className="space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <dt className="text-gray-500">Idioma</dt>
-                <dd className="text-gray-300 uppercase">
-                  {project.language || "it"}
+                <dd className="text-gray-300 font-medium">
+                  {{ it: "Italiano", pt: "Português", en: "Inglês", es: "Espanhol", ja: "Japonês" }[project.language || "it"] || project.language}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">Engine</dt>
-                <dd className="text-gray-300">
+                <dd className="text-gray-300 font-medium">
                   {project.synthesis_engine || "DiffSinger"}
                 </dd>
               </div>
               {project.voice_model && (
                 <div className="flex justify-between">
                   <dt className="text-gray-500">Voz</dt>
-                  <dd className="text-gray-300">{project.voice_model}</dd>
+                  <dd className="text-gray-300 font-medium">{project.voice_model}</dd>
                 </div>
               )}
               <div className="flex justify-between">
@@ -397,62 +516,78 @@ export default function ProjectPage() {
             </dl>
           </div>
 
-          {/* Actions */}
-          {project.instrumental_filename && project.lyrics && (
-            <div className="card">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-gray-500">
-                Ações
-              </h3>
-              <button
-                className="btn-primary w-full flex items-center justify-center gap-2"
-                onClick={() => pipelineMutation.mutate()}
-                disabled={
-                  pipelineMutation.isPending ||
-                  project.status === "synthesizing" ||
-                  project.status === "refining" ||
-                  project.status === "mixing"
-                }
-              >
-                {pipelineMutation.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                Iniciar Pipeline Completo
-              </button>
-            </div>
-          )}
-
-          {/* Step Status */}
+          {/* Pipeline Steps Status */}
           {pipelineStatus && (
             <div className="card">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-gray-500">
-                Steps do Pipeline
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+                Status dos Passos
               </h3>
-              <div className="space-y-2">
-                {PIPELINE_STEPS.map((step) => {
+              <div className="space-y-1.5">
+                {PIPELINE_STEPS.map((step, index) => {
                   const stepStatus = (
                     pipelineStatus as Record<string, Record<string, Record<string, boolean>>>
                   ).steps?.[step];
+                  const StepIcon = STEP_ICONS[step] || Music;
+                  const isComplete = stepStatus?.completed;
+                  const isAvailable = stepStatus?.available;
+                  const isCurrent = step === project.current_step;
+
                   return (
                     <div
                       key={step}
-                      className="flex items-center justify-between text-sm"
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        isCurrent
+                          ? "bg-brand-500/10 border border-brand-500/20"
+                          : "border border-transparent"
+                      }`}
                     >
-                      <span className="text-gray-400">
+                      <div
+                        className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                          isComplete
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : isCurrent
+                            ? "bg-brand-500/20 text-brand-400"
+                            : "bg-gray-800 text-gray-600"
+                        }`}
+                      >
+                        {isComplete ? (
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        ) : isCurrent ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <span className="text-[10px] font-bold">{index + 1}</span>
+                        )}
+                      </div>
+                      <span
+                        className={`flex-1 ${
+                          isComplete
+                            ? "text-emerald-400"
+                            : isCurrent
+                            ? "text-brand-400 font-medium"
+                            : isAvailable
+                            ? "text-gray-300"
+                            : "text-gray-600"
+                        }`}
+                      >
                         {STEP_LABELS[step]}
                       </span>
                       <span
-                        className={
-                          stepStatus?.completed
-                            ? "text-green-400"
-                            : stepStatus?.available
-                            ? "text-yellow-400"
-                            : "text-gray-600"
-                        }
+                        className={`text-[10px] font-medium uppercase ${
+                          isComplete
+                            ? "text-emerald-500/60"
+                            : isCurrent
+                            ? "text-brand-400/60"
+                            : isAvailable
+                            ? "text-gray-500"
+                            : "text-gray-700"
+                        }`}
                       >
-                        {stepStatus?.completed
-                          ? "Concluído"
-                          : stepStatus?.available
-                          ? "Disponível"
+                        {isComplete
+                          ? "Pronto"
+                          : isCurrent
+                          ? "Em progresso"
+                          : isAvailable
+                          ? "Disponivel"
                           : "Pendente"}
                       </span>
                     </div>

@@ -52,19 +52,21 @@ def main():
     base = Path(__file__).parent.parent
 
     # DiffSinger
-    ds_path = base / "engines" / "diffsinger"
+    ds_path = base / "engines" / "diffsinger" / "repo"
+    vb_path = base / "engines" / "voicebanks"
+    has_ds = ds_path.exists() and (ds_path / "scripts" / "infer.py").exists()
+    has_vb = vb_path.exists() and bool(list(vb_path.rglob("acoustic.onnx")))
     results["diffsinger"] = check("DiffSinger", lambda: (
-        "disponível" if ds_path.exists()
-        and any(ds_path.glob("*.py"))
-        else "não instalado (placeholder ativo)"
+        f"engine={'OK' if has_ds else 'N/A'}, voicebanks={'OK' if has_vb else 'N/A'}"
     ))
 
     # ACE-Step
-    as_path = base / "engines" / "ace-step"
+    as_path = base / "engines" / "ace-step" / "repo"
+    as_model = base / "engines" / "ace-step" / "model"
+    has_as = as_path.exists() and (as_path / "infer.py").exists()
+    has_as_model = as_model.exists() and bool(list(as_model.glob("*.json")))
     results["acestep"] = check("ACE-Step", lambda: (
-        "disponível" if as_path.exists()
-        and any(as_path.glob("*.py"))
-        else "não instalado (placeholder ativo)"
+        f"engine={'OK' if has_as else 'N/A'}, modelo={'OK' if has_as_model else 'N/A'}"
     ))
 
     # Pedalboard

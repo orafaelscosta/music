@@ -4,6 +4,9 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings
 
+# Raiz do projeto (pai do diretório backend/)
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     """Configurações da aplicação carregadas de variáveis de ambiente."""
@@ -24,11 +27,12 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "change-me-in-production"
 
-    # AI Engines paths
-    diffsinger_path: Path = Path("./engines/diffsinger")
-    acestep_path: Path = Path("./engines/ace-step")
-    applio_path: Path = Path("./engines/applio")
-    voicebanks_path: Path = Path("./engines/voicebanks")
+    # AI Engines paths (absolutos, baseados na raiz do projeto)
+    diffsinger_path: Path = _PROJECT_ROOT / "engines" / "diffsinger" / "repo"
+    acestep_path: Path = _PROJECT_ROOT / "engines" / "ace-step" / "repo"
+    acestep_model_path: Path = _PROJECT_ROOT / "engines" / "ace-step" / "model"
+    applio_path: Path = _PROJECT_ROOT / "engines" / "applio" / "repo"
+    voicebanks_path: Path = _PROJECT_ROOT / "engines" / "voicebanks"
 
     # Processing limits
     max_upload_size_mb: int = 500

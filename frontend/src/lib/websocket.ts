@@ -2,7 +2,14 @@
  * Cliente WebSocket para receber progresso do pipeline em tempo real.
  */
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+function getWsBase(): string {
+  if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
+  if (typeof window !== "undefined") {
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${window.location.host}`;
+  }
+  return "ws://localhost:8000";
+}
 
 export interface ProgressMessage {
   type: "progress" | "pong";
@@ -11,6 +18,9 @@ export interface ProgressMessage {
   progress?: number;
   message?: string;
   status?: string;
+  elapsed_seconds?: number;
+  eta_seconds?: number | null;
+  timestamp?: number;
 }
 
 type ProgressCallback = (message: ProgressMessage) => void;
@@ -22,24 +32,40 @@ export class PipelineWebSocket {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private disposed = false;
 
   constructor(projectId: string) {
     this.projectId = projectId;
   }
 
   connect(): void {
-    const url = `${WS_BASE}/ws/${this.projectId}`;
-    this.ws = new WebSocket(url);
+    if (this.disposed) return;
 
-    this.ws.onopen = () => {
+    const url = `${getWsBase()}/ws/${this.projectId}`;
+    try {
+      this.ws = new WebSocket(url);
+    } catch {
+      this.scheduleReconnect();
+      return;
+    }
+
+    const currentWs = this.ws;
+
+    currentWs.onopen = () => {
+      if (this.disposed) {
+        currentWs.close();
+        return;
+      }
       this.reconnectAttempts = 0;
-      // Enviar ping a cada 30s para manter conexão viva
       this.pingInterval = setInterval(() => {
-        this.ws?.send("ping");
+        if (currentWs.readyState === WebSocket.OPEN) {
+          currentWs.send("ping");
+        }
       }, 30000);
     };
 
-    this.ws.onmessage = (event) => {
+    currentWs.onmessage = (event) => {
+      if (this.disposed) return;
       try {
         const message: ProgressMessage = JSON.parse(event.data);
         this.callbacks.forEach((cb) => cb(message));
@@ -48,19 +74,32 @@ export class PipelineWebSocket {
       }
     };
 
-    this.ws.onclose = () => {
-      if (this.pingInterval) clearInterval(this.pingInterval);
-      // Tentar reconectar
-      if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        this.reconnectAttempts++;
-        const delay = Math.pow(2, this.reconnectAttempts) * 1000;
-        setTimeout(() => this.connect(), delay);
+    currentWs.onclose = () => {
+      this.clearPing();
+      if (!this.disposed) {
+        this.scheduleReconnect();
       }
     };
 
-    this.ws.onerror = () => {
-      this.ws?.close();
+    currentWs.onerror = () => {
+      // onclose fires after onerror
     };
+  }
+
+  private clearPing(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.disposed) return;
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      const delay = Math.min(Math.pow(2, this.reconnectAttempts) * 1000, 30000);
+      setTimeout(() => this.connect(), delay);
+    }
   }
 
   onProgress(callback: ProgressCallback): () => void {
@@ -71,10 +110,19 @@ export class PipelineWebSocket {
   }
 
   disconnect(): void {
-    if (this.pingInterval) clearInterval(this.pingInterval);
-    this.maxReconnectAttempts = 0; // Prevent reconnection
-    this.ws?.close();
-    this.ws = null;
+    this.disposed = true;
+    this.clearPing();
     this.callbacks = [];
+    if (this.ws) {
+      // Only close if already OPEN — avoid "closed before established" error
+      if (this.ws.readyState === WebSocket.OPEN) {
+        this.ws.close();
+      } else if (this.ws.readyState === WebSocket.CONNECTING) {
+        // Let onopen handle it via the disposed flag
+        const pendingWs = this.ws;
+        pendingWs.onopen = () => pendingWs.close();
+      }
+      this.ws = null;
+    }
   }
 }

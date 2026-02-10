@@ -5,7 +5,7 @@ import ToastContainer from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "ClovisAI - Music Creation",
-  description: "Sistema de criação musical com IA",
+  description: "Sistema de criacao musical com IA",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
                     className="h-8 w-8 rounded-lg transition-transform duration-200 group-hover:scale-110"
                   />
                   <span className="text-base font-bold tracking-tight text-white">
-                    Clovis<span className="bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">AI</span>
+                    Clovis<span className="bg-gradient-to-r from-brand-400 to-accent-400 bg-clip-text text-transparent">AI</span>
                   </span>
                 </a>
                 <nav className="flex items-center gap-1">

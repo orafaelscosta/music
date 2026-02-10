@@ -65,6 +65,7 @@ export const STATUS_LABELS: Record<string, string> = {
  */
 export const STEP_LABELS: Record<string, string> = {
   upload: "Upload",
+  separation: "Separação",
   analysis: "Análise",
   melody: "Melodia",
   synthesis: "Síntese",
