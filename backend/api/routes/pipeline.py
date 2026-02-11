@@ -8,11 +8,15 @@ from api.schemas import ProjectResponse
 from config import settings
 from database import get_db
 from models.project import PipelineStep, Project, ProjectStatus
-from services.analyzer import AudioAnalyzer
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
-analyzer = AudioAnalyzer()
+
+
+def _get_analyzer():
+    """Lazy-load AudioAnalyzer para evitar importar librosa no startup."""
+    from services.analyzer import AudioAnalyzer
+    return AudioAnalyzer()
 
 
 @router.post("/{project_id}/start", response_model=ProjectResponse)
@@ -234,7 +238,7 @@ async def quick_start(
 
     # Executar análise síncrona
     try:
-        analysis = await analyzer.analyze(file_path)
+        analysis = await _get_analyzer().analyze(file_path)
     except Exception as e:
         project.status = ProjectStatus.ERROR
         project.error_message = f"Erro na análise: {str(e)}"
