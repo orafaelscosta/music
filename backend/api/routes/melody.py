@@ -1,8 +1,5 @@
 """Rotas para operações de melodia — extração, importação, edição MIDI."""
 
-import json
-from pathlib import Path
-
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,14 +7,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from database import get_db
 from models.project import PipelineStep, Project, ProjectStatus
-from services.melody import MelodyData, MelodyNote, MelodyService
-from services.syllable import SyllableService
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/melody", tags=["melody"])
 
-melody_service = MelodyService()
-syllable_service = SyllableService()
+
+def _get_melody_service():
+    """Lazy-load MelodyService para evitar importar librosa no startup."""
+    from services.melody import MelodyService
+    return MelodyService()
+
+
+def _get_syllable_service():
+    """Lazy-load SyllableService para evitar importar no startup."""
+    from services.syllable import SyllableService
+    return SyllableService()
 
 
 @router.post("/{project_id}/extract")
@@ -39,18 +43,19 @@ async def extract_melody(
 
     bpm = project.bpm or 120.0
 
+    svc = _get_melody_service()
     try:
-        melody = await melody_service.extract_melody_from_audio(audio_path, bpm)
+        melody = await svc.extract_melody_from_audio(audio_path, bpm)
     except Exception as e:
         logger.error("melody_extraction_erro", project_id=project_id, error=str(e))
         raise HTTPException(status_code=500, detail=f"Erro na extração de melodia: {str(e)}")
 
     # Salvar melodia JSON
     project_dir = settings.projects_path / project_id
-    melody_service.save_melody_json(melody, project_dir / "melody.json")
+    svc.save_melody_json(melody, project_dir / "melody.json")
 
     # Exportar MIDI
-    await melody_service.export_midi(melody, project_dir / "melody.mid")
+    await svc.export_midi(melody, project_dir / "melody.mid")
 
     # Atualizar status do projeto
     project.current_step = PipelineStep.MELODY
@@ -86,15 +91,16 @@ async def import_midi(
 
     bpm = project.bpm or 120.0
 
+    svc = _get_melody_service()
     try:
-        melody = await melody_service.import_midi(temp_midi, bpm)
+        melody = await svc.import_midi(temp_midi, bpm)
     except Exception as e:
         logger.error("midi_import_erro", project_id=project_id, error=str(e))
         raise HTTPException(status_code=500, detail=f"Erro na importação MIDI: {str(e)}")
 
     # Salvar melodia JSON e MIDI
-    melody_service.save_melody_json(melody, project_dir / "melody.json")
-    await melody_service.export_midi(melody, project_dir / "melody.mid")
+    svc.save_melody_json(melody, project_dir / "melody.json")
+    await svc.export_midi(melody, project_dir / "melody.mid")
 
     # Limpar arquivo temporário
     if temp_midi.exists():
@@ -121,7 +127,7 @@ async def get_melody(
     if not melody_json.exists():
         raise HTTPException(status_code=404, detail="Melodia não encontrada. Execute extração ou importe MIDI.")
 
-    melody = melody_service.load_melody_json(melody_json)
+    melody = _get_melody_service().load_melody_json(melody_json)
     return melody.to_dict()
 
 
@@ -136,15 +142,18 @@ async def update_melody(
     if not project:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
 
+    from services.melody import MelodyData
+
     try:
         melody = MelodyData.from_dict(data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Dados de melodia inválidos: {str(e)}")
 
     # Salvar
+    svc = _get_melody_service()
     project_dir = settings.projects_path / project_id
-    melody_service.save_melody_json(melody, project_dir / "melody.json")
-    await melody_service.export_midi(melody, project_dir / "melody.mid")
+    svc.save_melody_json(melody, project_dir / "melody.json")
+    await svc.export_midi(melody, project_dir / "melody.mid")
 
     await db.commit()
 
@@ -167,12 +176,13 @@ async def snap_melody_to_grid(
     if not melody_json.exists():
         raise HTTPException(status_code=404, detail="Melodia não encontrada")
 
-    melody = melody_service.load_melody_json(melody_json)
+    svc = _get_melody_service()
+    melody = svc.load_melody_json(melody_json)
     melody.snap_to_grid(grid_resolution)
 
     project_dir = settings.projects_path / project_id
-    melody_service.save_melody_json(melody, project_dir / "melody.json")
-    await melody_service.export_midi(melody, project_dir / "melody.mid")
+    svc.save_melody_json(melody, project_dir / "melody.json")
+    await svc.export_midi(melody, project_dir / "melody.mid")
 
     logger.info("melody_quantizada", project_id=project_id, grid=grid_resolution)
     return melody.to_dict()
@@ -194,19 +204,21 @@ async def syllabify_lyrics(
     language = project.language or "it"
 
     # Segmentar em sílabas
-    syllables = await syllable_service.syllabify_text(project.lyrics, language)
-    lines = syllable_service.syllables_to_lines(project.lyrics, syllables)
+    syl_svc = _get_syllable_service()
+    syllables = await syl_svc.syllabify_text(project.lyrics, language)
+    lines = syl_svc.syllables_to_lines(project.lyrics, syllables)
 
     # Se houver melodia, associar sílabas às notas
     melody_json = settings.projects_path / project_id / "melody.json"
     melody_assigned = False
     if melody_json.exists():
-        melody = melody_service.load_melody_json(melody_json)
-        melody = melody_service.assign_lyrics_to_notes(melody, syllables)
-        melody_service.save_melody_json(melody, melody_json)
+        mel_svc = _get_melody_service()
+        melody = mel_svc.load_melody_json(melody_json)
+        melody = mel_svc.assign_lyrics_to_notes(melody, syllables)
+        mel_svc.save_melody_json(melody, melody_json)
 
         project_dir = settings.projects_path / project_id
-        await melody_service.export_midi(melody, project_dir / "melody.mid")
+        await mel_svc.export_midi(melody, project_dir / "melody.mid")
         melody_assigned = True
 
     logger.info(

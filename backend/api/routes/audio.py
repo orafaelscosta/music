@@ -9,12 +9,15 @@ from api.schemas import AudioAnalysis
 from config import settings
 from database import get_db
 from models.project import PipelineStep, Project, ProjectStatus
-from services.analyzer import AudioAnalyzer
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/audio", tags=["audio"])
 
-analyzer = AudioAnalyzer()
+
+def _get_analyzer():
+    """Lazy-load AudioAnalyzer para evitar importar librosa no startup."""
+    from services.analyzer import AudioAnalyzer
+    return AudioAnalyzer()
 
 
 @router.post("/{project_id}/upload", response_model=AudioAnalysis)
@@ -72,7 +75,7 @@ async def upload_instrumental(
 
     # Executar análise
     try:
-        analysis = await analyzer.analyze(file_path)
+        analysis = await _get_analyzer().analyze(file_path)
     except Exception as e:
         project.status = ProjectStatus.ERROR
         project.error_message = f"Erro na análise: {str(e)}"
@@ -147,5 +150,5 @@ async def get_waveform(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Arquivo de áudio não encontrado")
 
-    peaks = await analyzer.generate_waveform_peaks(file_path)
+    peaks = await _get_analyzer().generate_waveform_peaks(file_path)
     return {"peaks": peaks, "duration": project.duration_seconds}
