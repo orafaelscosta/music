@@ -1,7 +1,8 @@
 """Rotas para gerenciamento de vozes e modelos."""
 
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
 from config import settings
 
@@ -275,10 +276,45 @@ VOICE_PRESETS = [
 ]
 
 
+PREVIEWS_DIR = settings.storage_path / "voice-previews"
+
+
+def _has_preview(preset_id: str) -> bool:
+    """Verifica se existe arquivo de preview para o preset."""
+    if not PREVIEWS_DIR.exists():
+        return False
+    for ext in (".mp3", ".wav", ".ogg"):
+        if (PREVIEWS_DIR / f"{preset_id}{ext}").exists():
+            return True
+    return False
+
+
 @router.get("/presets")
 async def list_voice_presets() -> dict:
     """Retorna a biblioteca de vozes predefinidas."""
-    return {"presets": VOICE_PRESETS, "total": len(VOICE_PRESETS)}
+    presets = [
+        {**p, "has_preview": _has_preview(p["id"])} for p in VOICE_PRESETS
+    ]
+    return {"presets": presets, "total": len(presets)}
+
+
+@router.get("/preview/{preset_id}")
+async def get_voice_preview(preset_id: str):
+    """Serve o arquivo de áudio de preview de um preset de voz."""
+    if not PREVIEWS_DIR.exists():
+        raise HTTPException(status_code=404, detail="Preview não encontrado")
+
+    for ext in (".mp3", ".wav", ".ogg"):
+        filepath = PREVIEWS_DIR / f"{preset_id}{ext}"
+        if filepath.exists():
+            media_types = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg"}
+            return FileResponse(
+                filepath,
+                media_type=media_types[ext],
+                filename=f"{preset_id}{ext}",
+            )
+
+    raise HTTPException(status_code=404, detail="Preview não encontrado")
 
 
 @router.get("")

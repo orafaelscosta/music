@@ -522,6 +522,11 @@ class ApiClient {
   getAudioUrl(projectId: string, filename: string): string {
     return `${this.baseUrl}/api/audio/${projectId}/${filename}`;
   }
+
+  // Voice preview URL
+  getVoicePreviewUrl(presetId: string): string {
+    return `${this.baseUrl}/api/voices/preview/${presetId}`;
+  }
 }
 
 export const api = new ApiClient();

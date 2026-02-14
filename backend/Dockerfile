@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.prod.txt
 COPY . .
 
 # Criar diretórios necessários
-RUN mkdir -p storage/projects
+RUN mkdir -p storage/projects storage/voice-previews
 
 ENV PYTHONUNBUFFERED=1
 

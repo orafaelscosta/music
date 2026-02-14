@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { showToast } from "@/components/Toast";
 import StudioSlider from "@/components/StudioSlider";
 import StyleCard from "@/components/StyleCard";
+import VoicePreviewButton from "@/components/VoicePreviewButton";
 import {
   Upload,
   Zap,
@@ -577,6 +578,9 @@ export default function QuickStartPage() {
                     }`}>
                       {preset.gender === "male" ? "M" : "F"}
                     </span>
+                    <div className="ml-auto">
+                      <VoicePreviewButton presetId={preset.id} size="sm" />
+                    </div>
                   </div>
                   <h4 className={`text-xs font-semibold ${
                     selectedVoice === preset.id ? "text-white" : "text-gray-300"
