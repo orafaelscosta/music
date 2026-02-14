@@ -7,6 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
 
 jobs:
   build-backend:
@@ -30,15 +31,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}-backend:latest
-
-      - name: Make backend package public
-        run: |
-          curl -s -X PATCH \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$(echo '${{ github.event.repository.name }}-backend' | sed 's/\//%2F/g')" \
-            -d '{"visibility":"public"}' || true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
 
   build-frontend:
     runs-on: ubuntu-latest
@@ -61,14 +54,12 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}-frontend:latest
-          build-args: |
-            NEXT_PUBLIC_WS_URL=ws://103.199.186.34:8091
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
+          # NEXT_PUBLIC_WS_URL not set — frontend auto-detects from browser location
 
-      - name: Make frontend package public
-        run: |
-          curl -s -X PATCH \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$(echo '${{ github.event.repository.name }}-frontend' | sed 's/\//%2F/g')" \
-            -d '{"visibility":"public"}' || true
+  deploy:
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy notification
+        run: echo "Images pushed. Deploy via Hostinger VPS panel or API."

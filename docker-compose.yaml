@@ -1,14 +1,8 @@
-version: "3.8"
-
 services:
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_WS_URL: ws://103.199.186.34:8091
+    image: ghcr.io/orafaelscosta/music-frontend:latest
     ports:
-      - "80:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=production
       - BACKEND_URL=http://backend:8000
@@ -17,19 +11,16 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/orafaelscosta/music-backend:latest
     ports:
       - "8091:8000"
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./clovisai.db
+      - DATABASE_URL=sqlite+aiosqlite:///./storage/clovisai.db
       - REDIS_URL=redis://redis:6379/0
-      - CORS_ORIGINS=http://103.199.186.34,http://103.199.186.34:80,http://mistyrose-gull-812178.hostingersite.com
+      - CORS_ORIGINS=https://mistyrose-gull-812178.hostingersite.com,http://mistyrose-gull-812178.hostingersite.com
       - STORAGE_PATH=/app/storage
     volumes:
       - backend-storage:/app/storage
-      - backend-db:/app
     depends_on:
       - redis
     restart: unless-stopped
@@ -42,5 +33,4 @@ services:
 
 volumes:
   backend-storage:
-  backend-db:
   redis-data:
