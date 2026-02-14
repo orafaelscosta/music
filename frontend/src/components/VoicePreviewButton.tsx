@@ -23,6 +23,9 @@ export default function VoicePreviewButton({
   const stop = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.oncanplaythrough = null;
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.currentTime = 0;
     }
     setState("idle");
@@ -73,27 +76,26 @@ export default function VoicePreviewButton({
 
     setState("loading");
 
-    const onCanPlay = () => {
-      audio.play();
-      setState("playing");
-    };
-
-    const onEnded = () => {
+    audio.onended = () => {
       setState("idle");
       currentAudio = null;
       currentStopCallback = null;
     };
 
-    const onError = () => {
+    audio.onerror = () => {
       setState("idle");
       currentAudio = null;
       currentStopCallback = null;
     };
 
-    audio.oncanplaythrough = onCanPlay;
-    audio.onended = onEnded;
-    audio.onerror = onError;
     audio.load();
+    audio.play()
+      .then(() => setState("playing"))
+      .catch(() => {
+        setState("idle");
+        currentAudio = null;
+        currentStopCallback = null;
+      });
   };
 
   const sizeClasses = size === "sm" ? "h-6 w-6" : "h-8 w-8";
