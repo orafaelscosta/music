@@ -9,10 +9,13 @@ COPY . .
 
 RUN mkdir -p public
 
-# NEXT_PUBLIC_WS_URL: baked at build time for client-side WebSocket
+# Build-time env vars baked into Next.js output
 ARG NEXT_PUBLIC_WS_URL=
 ENV NEXT_PUBLIC_API_URL=
 ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL}
+
+# BACKEND_URL usado pelo next.config.js rewrites (compilado no build)
+ENV BACKEND_URL=http://backend:8000
 
 RUN npm run build
 
